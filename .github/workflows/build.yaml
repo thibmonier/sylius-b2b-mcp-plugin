@@ -29,26 +29,17 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                # Sylius 2.2: PHP >= 8.2, Symfony 6.4 / 7.4. Sylius 2.3: PHP >= 8.3, Symfony 6.4 / 7.4 / 8.0
+                # sylius/mcp-server-plugin 0.2 needs symfony/mcp-bundle 0.3: Symfony ^7.3 || ^8.0 (no 6.4).
+                # Sylius 2.2: PHP >= 8.2, Symfony 7.4. Sylius 2.3: PHP >= 8.3, Symfony 7.4 / 8.0
                 # (Symfony 8 needs PHP 8.4; API Platform 5 and Symfony UX 3 are resolved there).
                 # https://github.com/Sylius/Sylius/blob/2.3/composer.json
-                php: ["8.3", "8.4"]
+                php: ["8.2", "8.3", "8.4"]
                 symfony: ["^7.4"]
                 sylius: ["~2.2.0", "~2.3.0"]
                 database: ["mysql:8.4"]
                 node: ["22.x"]
 
                 include:
-                    - php: "8.2"
-                      symfony: "^6.4"
-                      sylius: "~2.2.0"
-                      database: "mysql:8.4"
-                      node: "22.x"
-                    - php: "8.3"
-                      symfony: "^6.4"
-                      sylius: "~2.3.0"
-                      database: "mysql:8.4"
-                      node: "22.x"
                     - php: "8.4"
                       symfony: "^8.0"
                       sylius: "~2.3.0"
@@ -95,8 +86,6 @@ jobs:
 
             -
                 name: Run static analysis
-                # Symfony 6.4 Config builder is not typed enough for PHPStan at level max
-                if: matrix.symfony != '^6.4'
                 run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
 
             -

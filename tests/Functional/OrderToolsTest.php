@@ -57,7 +57,8 @@ final class OrderToolsTest extends WebTestCase
         $list = $this->callTool($token, 'list_my_orders');
         self::assertSame(1, $list['total']);
         self::assertSame($own->getNumber(), self::at($list, 'orders', 0, 'number'));
-        self::assertSame('55.00', self::at($list, 'orders', 0, 'total'));
+        // The total depends on the (random) promotions of the fixtures: compared with the order.
+        self::assertSame(number_format($own->getTotal() / 100, 2, '.', ''), self::at($list, 'orders', 0, 'total'));
         self::assertArrayNotHasKey('placed_by', self::arrayAt($list, 'orders', 0));
 
         $detail = $this->callTool($token, 'get_order', ['order_number' => (string) $own->getNumber()]);

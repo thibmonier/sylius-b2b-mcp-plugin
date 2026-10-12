@@ -173,12 +173,14 @@ final class PluginToolsTest extends WebTestCase
 
         $statement = $this->callTool($token, 'get_trade_credit_statement');
 
+        // Totals depend on the (random) promotions of the fixtures: computed from the orders.
+        $money = static fn (int $amount): string => number_format($amount / 100, 2, '.', '');
         self::assertSame('1000.00', $statement['credit_limit']);
-        self::assertSame('110.00', $statement['committed']);
-        self::assertSame('890.00', $statement['available']);
+        self::assertSame($money($current->getTotal() + $late->getTotal()), $statement['committed']);
+        self::assertSame($money(100000 - $current->getTotal() - $late->getTotal()), $statement['available']);
         self::assertFalse($statement['on_hold']);
-        self::assertSame('55.00', $statement['overdue_amount']);
-        self::assertSame(['not_due' => '55.00', 'overdue_1_30' => '0.00', 'overdue_31_60' => '55.00', 'overdue_61_90' => '0.00', 'overdue_over_90' => '0.00'], $statement['ageing']);
+        self::assertSame($money($late->getTotal()), $statement['overdue_amount']);
+        self::assertSame(['not_due' => $money($current->getTotal()), 'overdue_1_30' => '0.00', 'overdue_31_60' => $money($late->getTotal()), 'overdue_61_90' => '0.00', 'overdue_over_90' => '0.00'], $statement['ageing']);
         $items = self::indexBy($statement, 'order_number', 'open_items');
         self::assertFalse(self::at($items, (string) $current->getNumber(), 'overdue'));
         self::assertTrue(self::at($items, (string) $late->getNumber(), 'overdue'));
