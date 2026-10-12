@@ -25,6 +25,7 @@ tmonier_b2b_mcp:
         authorize_title: "Connect %client% to your account"
         authorize_intro: "%client% asks to access your customer account on %shop%."
         authorize_redirect: "After your decision you are sent back to %host%."
+        authorize_unverified: "The assistant registered itself on %date% under the name “%client%”, which the shop has not verified. Continue only if you started this connection yourself from your assistant and the address above is the one of your assistant."
         authorize_permissions: "It will be able to:"
         authorize_never: "It can never place or pay an order, nor change your account, addresses or payment methods. You can disconnect it at any time from your account."
         approve: "Allow"

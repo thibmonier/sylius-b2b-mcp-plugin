@@ -10,6 +10,11 @@
         <field name="identifier" column="identifier" type="string" length="64" unique="true" />
         <field name="name" column="name" type="string" length="255" />
         <field name="redirectUris" column="redirect_uris" type="json" />
+        <field name="dynamicallyRegistered" column="dynamically_registered" type="boolean">
+            <options>
+                <option name="default">1</option>
+            </options>
+        </field>
         <field name="secretHash" column="secret_hash" type="string" length="255" nullable="true" />
         <field name="createdAt" column="created_at" type="datetime_immutable" />
     </entity>

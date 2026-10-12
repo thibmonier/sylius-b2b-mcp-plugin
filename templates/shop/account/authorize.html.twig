@@ -10,9 +10,14 @@
                     <div class="card-body p-4">
                         <h1 class="h3 mb-3">{{ 'tmonier_b2b_mcp.ui.authorize_title'|trans({'%client%': client_name}) }}</h1>
                         <p>{{ 'tmonier_b2b_mcp.ui.authorize_intro'|trans({'%client%': client_name, '%shop%': channel.name}) }}</p>
-                        <p class="small text-body-secondary" {{ sylius_test_html_attribute('tmonier-b2b-mcp-redirect-host') }}>
+                        <div class="alert alert-info fw-semibold" {{ sylius_test_html_attribute('tmonier-b2b-mcp-redirect-host') }}>
                             {{ 'tmonier_b2b_mcp.ui.authorize_redirect'|trans({'%host%': redirect_host}) }}
-                        </p>
+                        </div>
+                        {% if dynamically_registered %}
+                            <p class="small text-body-secondary" {{ sylius_test_html_attribute('tmonier-b2b-mcp-unverified') }}>
+                                {{ 'tmonier_b2b_mcp.ui.authorize_unverified'|trans({'%client%': declared_name, '%date%': registered_at|date('Y-m-d')}) }}
+                            </p>
+                        {% endif %}
 
                         <h2 class="h6 mt-4">{{ 'tmonier_b2b_mcp.ui.authorize_permissions'|trans }}</h2>
                         <ul {{ sylius_test_html_attribute('tmonier-b2b-mcp-scopes') }}>

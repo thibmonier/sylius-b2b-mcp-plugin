@@ -25,6 +25,7 @@ tmonier_b2b_mcp:
         authorize_title: "Połącz %client% z Twoim kontem"
         authorize_intro: "%client% prosi o dostęp do Twojego konta klienta w %shop%."
         authorize_redirect: "Po podjęciu decyzji wrócisz do %host%."
+        authorize_unverified: "Asystent zarejestrował się sam %date% pod nazwą „%client%”, której sklep nie zweryfikował. Kontynuuj tylko wtedy, gdy sam rozpocząłeś to połączenie w swoim asystencie, a powyższy adres należy do Twojego asystenta."
         authorize_permissions: "Będzie mógł:"
         authorize_never: "Nigdy nie będzie mógł złożyć ani opłacić zamówienia ani zmienić Twojego konta, adresów lub metod płatności. Możesz go odłączyć w dowolnym momencie na swoim koncie."
         approve: "Zezwól"

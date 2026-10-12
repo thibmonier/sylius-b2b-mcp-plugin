@@ -20,6 +20,7 @@ class OAuthClient
         private string $name,
         private array $redirectUris,
         private ?string $secretHash = null,
+        private bool $dynamicallyRegistered = true,
     ) {
         $this->createdAt = new \DateTimeImmutable();
     }
@@ -53,6 +54,12 @@ class OAuthClient
     public function isConfidential(): bool
     {
         return null !== $this->secretHash;
+    }
+
+    /** Registered by anyone through RFC 7591 (its name is self-declared), not by the merchant. */
+    public function isDynamicallyRegistered(): bool
+    {
+        return $this->dynamicallyRegistered;
     }
 
     public function getCreatedAt(): \DateTimeImmutable

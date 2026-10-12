@@ -286,6 +286,39 @@ final class OAuthFlowTest extends WebTestCase
         self::assertResponseRedirects();
     }
 
+    public function testTheConsentPageNamesTheAssistantFromItsVerifiedCallbackHost(): void
+    {
+        $customer = $this->customer();
+        $client = $this->register(['client_name' => "Totally Legit Bank \u{202E}\u{200B}", 'redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']);
+        self::assertSame('Totally Legit Bank', $client['client_name'], 'Control and bidi characters are removed.');
+        [, $challenge] = self::pkce();
+        $this->loginShop($customer);
+
+        $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($this->authorizeQuery(self::stringAt($client, 'client_id'), $challenge)));
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('Connect Claude to your account', trim($crawler->filter('[data-test-tmonier-b2b-mcp-consent] h1')->text()));
+        $notice = $crawler->filter('[data-test-tmonier-b2b-mcp-unverified]');
+        self::assertCount(1, $notice);
+        self::assertStringContainsString('“Totally Legit Bank”', $notice->text());
+        self::assertStringContainsString((new \DateTimeImmutable())->format('Y-m-d'), $notice->text());
+    }
+
+    public function testAClientCreatedByTheMerchantIsNotFlaggedAsSelfRegistered(): void
+    {
+        $customer = $this->customer();
+        $registrar = $this->service('tmonier_b2b_mcp.oauth.client_registrar');
+        self::assertInstanceOf(\Tmonier\SyliusB2bMcpPlugin\OAuth\ClientRegistrar::class, $registrar);
+        [$client] = $registrar->create('Claude for Acme', [self::REDIRECT_URI], false);
+        [, $challenge] = self::pkce();
+        $this->loginShop($customer);
+
+        $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($this->authorizeQuery($client->getIdentifier(), $challenge)));
+
+        self::assertResponseIsSuccessful();
+        self::assertCount(0, $crawler->filter('[data-test-tmonier-b2b-mcp-unverified]'));
+    }
+
     public function testDenyingSendsAccessDeniedBack(): void
     {
         $customer = $this->customer();

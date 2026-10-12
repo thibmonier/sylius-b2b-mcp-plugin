@@ -56,7 +56,7 @@ final class ClientRegistrar
         }
         $name = $metadata['client_name'] ?? null;
 
-        [$client, $secret] = $this->create(\is_string($name) ? $name : '', $allowedUris, self::AUTH_METHOD_NONE !== $authMethod);
+        [$client, $secret] = $this->create(\is_string($name) ? $name : '', $allowedUris, self::AUTH_METHOD_NONE !== $authMethod, true);
 
         return array_filter([
             'client_id' => $client->getIdentifier(),
@@ -91,9 +91,10 @@ final class ClientRegistrar
      *
      * @return array{OAuthClient, string|null} the client and its secret (shown once)
      */
-    public function create(string $name, array $redirectUris, bool $confidential): array
+    public function create(string $name, array $redirectUris, bool $confidential, bool $dynamicallyRegistered = false): array
     {
-        $name = trim((string) preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $name));
+        // Control, format (bidi overrides such as U+202E), private and unassigned characters.
+        $name = trim((string) preg_replace('/[\p{C}\s]+/u', ' ', $name));
         if ('' === $name) {
             $name = 'MCP client';
         }
@@ -103,6 +104,7 @@ final class ClientRegistrar
             mb_substr($name, 0, 100),
             array_values(array_unique($redirectUris)),
             null === $secret ? null : password_hash($secret, \PASSWORD_DEFAULT),
+            $dynamicallyRegistered,
         );
         $this->entityManager->persist($client);
         $this->entityManager->flush();

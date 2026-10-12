@@ -180,6 +180,14 @@ bin/console tmonier:b2b-mcp:create-client "Claude" --redirect-uri=https://claude
 and enter the client ID (and secret) in the advanced settings of the connector. Dynamic
 registration can then be switched off (`oauth.dynamic_client_registration: false`).
 
+**Recommended in production when your customers can be given a client ID:** disable dynamic
+registration and create one client per assistant with the command. With dynamic registration
+on (needed for the one-click "Add connector" flow), anyone can register a client and choose its
+name; the redirect URI allow-list keeps the codes on the assistants' own hosts, and the consent
+page names the assistant after that verified host (Claude, ChatGPT), shows the host
+prominently and flags self-registered clients ("registered itself on <date> under the name
+... not verified by the shop").
+
 ## Configuration
 
 Optional, with the defaults:
@@ -243,8 +251,10 @@ tools then work next to the B2B ones, with a separate guest cart).
   every token of the connection.
 - **Consent.** `/mcp-oauth/authorize` checks the request (client, registered redirect URI still
   allowed, PKCE S256, `resource` naming this endpoint) and sends the browser to
-  `/{locale}/account/ai-assistants/authorize`, behind the shop login. The page shows the
-  assistant name, the host it returns to and the permissions; it cannot be framed.
+  `/{locale}/account/ai-assistants/authorize`, behind the shop login. The page names the
+  assistant after the host it returns to when it is a known one (otherwise the declared name,
+  stripped of control and bidi characters), shows that host prominently, flags clients that
+  registered themselves, and lists the permissions; it cannot be framed.
 - **Same rules as the shop.** Carts are the customer's latest cart on the channel (the one the
   shop shows after login). Lines go through the quick order adder when that plugin is
   installed (as its reorder button does), otherwise through the core rules (enabled, sold in

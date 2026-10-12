@@ -20,6 +20,7 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\AuthorizationRequestValidator;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\ConnectionManager;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Entity\ClientEntity;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Entity\UserEntity;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\KnownAssistants;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\PsrBridge;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Scopes;
 use Twig\Environment;
@@ -68,10 +69,16 @@ final class ConsentController
         }
 
         $client = $authorizationRequest->getClient();
+        \assert($client instanceof ClientEntity);
+        $redirectHost = $this->validator->getRedirectHost($authorizationRequest);
 
         return new Response($this->twig->render('@TmonierSyliusB2bMcpPlugin/shop/account/authorize.html.twig', [
-            'client_name' => $client->getName(),
-            'redirect_host' => $this->validator->getRedirectHost($authorizationRequest),
+            // The name shown is the one of the host the code goes back to when it is known.
+            'client_name' => KnownAssistants::nameForHost($redirectHost) ?? $client->getName(),
+            'declared_name' => $client->getName(),
+            'dynamically_registered' => $client->getClient()->isDynamicallyRegistered(),
+            'registered_at' => $client->getClient()->getCreatedAt(),
+            'redirect_host' => $redirectHost,
             'scopes' => $this->scopeIdentifiers($authorizationRequest),
             'channel' => $this->channelContext->getChannel(),
         ]), Response::HTTP_OK, ['X-Frame-Options' => 'DENY', 'Cache-Control' => 'no-store']);

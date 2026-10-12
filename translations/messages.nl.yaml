@@ -25,6 +25,7 @@ tmonier_b2b_mcp:
         authorize_title: "%client% met uw account verbinden"
         authorize_intro: "%client% vraagt toegang tot uw klantaccount bij %shop%."
         authorize_redirect: "Na uw beslissing wordt u teruggestuurd naar %host%."
+        authorize_unverified: "De assistent heeft zichzelf op %date% geregistreerd onder de naam „%client%”, die de winkel niet heeft gecontroleerd. Ga alleen verder als u deze verbinding zelf vanuit uw assistent hebt gestart en het adres hierboven dat van uw assistent is."
         authorize_permissions: "De assistent kan:"
         authorize_never: "De assistent kan nooit een bestelling plaatsen of betalen, en uw account, adressen of betaalmiddelen niet wijzigen. U kunt hem altijd loskoppelen via uw account."
         approve: "Toestaan"

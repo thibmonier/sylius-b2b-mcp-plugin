@@ -133,6 +133,10 @@ free-text arguments (`message`) are logged as their length only.
 10. OAuth endpoints rate limited per client (the assistants call from a few server addresses)
     and the registration per IP with a generous default.
 
+11. Self-registered clients are flagged on the consent page, which names known assistants after
+    their verified callback host; disabling dynamic registration and creating clients with the
+    command is the recommended production setting when customers can enter a client ID.
+
 ## 5. Interfaces
 
 - `B2bToolInterface::getDefinition()` (static MCP tool definition: name, JSON schema,
