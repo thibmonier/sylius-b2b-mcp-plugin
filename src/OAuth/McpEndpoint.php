@@ -38,8 +38,18 @@ final class McpEndpoint
         return $this->getIssuer($request) . self::PROTECTED_RESOURCE_METADATA . $this->path;
     }
 
+    /**
+     * Whether the request reaches the MCP controller of symfony/mcp-bundle. Decided on the route
+     * matched by the router (which decodes the path: /%5Fmcp is /_mcp), with the decoded path as
+     * a fallback when routing did not run yet.
+     */
     public function isEndpoint(Request $request): bool
     {
-        return rtrim($request->getPathInfo(), '/') === rtrim($this->path, '/');
+        $controller = $request->attributes->get('_controller');
+        if (\is_string($controller) && str_starts_with($controller, 'mcp.server.')) {
+            return true;
+        }
+
+        return rtrim(rawurldecode($request->getPathInfo()), '/') === rtrim($this->path, '/');
     }
 }

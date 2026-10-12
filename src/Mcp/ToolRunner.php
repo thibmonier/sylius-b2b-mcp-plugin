@@ -72,12 +72,17 @@ final class ToolRunner
             return $result;
         } catch (ToolRefusal $refusal) {
             $this->release($connection, $tool, $idempotencyKey, $claimed);
-            $this->log($connection, $tool, $arguments, ToolCallInterface::OUTCOME_REFUSED, $refusal->getMessage(), $start);
+            // Calls without a customer (stdio transport) are not recorded: nothing to attribute.
+            if (null !== $connection) {
+                $this->log($connection, $tool, $arguments, ToolCallInterface::OUTCOME_REFUSED, $refusal->getMessage(), $start);
+            }
 
             throw new ToolCallException($refusal->getMessage(), 0, $refusal);
         } catch (\Throwable $exception) {
             $this->release($connection, $tool, $idempotencyKey, $claimed);
-            $this->log($connection, $tool, $arguments, ToolCallInterface::OUTCOME_ERROR, $exception::class, $start);
+            if (null !== $connection) {
+                $this->log($connection, $tool, $arguments, ToolCallInterface::OUTCOME_ERROR, $exception::class, $start);
+            }
 
             throw $exception;
         }

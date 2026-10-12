@@ -39,6 +39,22 @@ final class OAuthFlowTest extends WebTestCase
         self::assertStringContainsString('error="invalid_token"', (string) $this->client->getResponse()->headers->get('WWW-Authenticate'));
     }
 
+    /** The router decodes the path: an encoded spelling of the endpoint is the endpoint. */
+    public function testEncodedSpellingsOfTheEndpointAlsoNeedAToken(): void
+    {
+        foreach (['/%5Fmcp', '/_mc%70', '/%5F%6D%63%70'] as $path) {
+            $this->client->request('POST', $path, [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json, text/event-stream'], '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"x","version":"1"}}}');
+
+            self::assertResponseStatusCodeSame(401, $path);
+            self::assertNull($this->client->getResponse()->headers->get('Mcp-Session-Id'), $path);
+        }
+
+        $token = $this->accessToken($this->customer());
+        $this->client->request('POST', '/%5Fmcp', [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json, text/event-stream', 'HTTP_AUTHORIZATION' => 'Bearer ' . $token], '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"x","version":"1"}}}');
+        self::assertResponseIsSuccessful();
+        self::assertSame([], $this->client->getCookieJar()->allRawValues('http://localhost/'), 'Stateless on the encoded path too.');
+    }
+
     public function testAShopSessionIsNotEnough(): void
     {
         $this->loginShop($this->customer());

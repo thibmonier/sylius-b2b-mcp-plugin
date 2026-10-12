@@ -30,7 +30,7 @@ final class ServicesTest extends WebTestCase
         parent::tearDown();
     }
 
-    public function testAToolCalledWithoutAConnectedCustomerRefusesAndIsAudited(): void
+    public function testAToolCalledWithoutAConnectedCustomerRefusesWithoutAuditEntry(): void
     {
         // E.g. the stdio transport (bin/console mcp:server): no OAuth, no customer.
         $tool = self::getContainer()->get(ListMyOrdersTool::class);
@@ -42,7 +42,8 @@ final class ServicesTest extends WebTestCase
         } catch (ToolCallException $exception) {
             self::assertSame('Not signed in: this tool needs a shop account connected to the assistant (OAuth).', $exception->getMessage());
         }
-        self::assertSame('refused', $this->connection()->fetchOne("SELECT outcome FROM tmonier_b2b_mcp_tool_call WHERE tool = 'list_my_orders' AND customer_email IS NULL ORDER BY id DESC"));
+        // Nothing to attribute, and anonymous calls must not fill the audit log.
+        self::assertSame(0, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_tool_call WHERE connection_id IS NULL'));
     }
 
     public function testIdempotencyKeys(): void

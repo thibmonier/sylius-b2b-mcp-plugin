@@ -22,7 +22,8 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
 use Tmonier\SyliusB2bMcpPlugin\RateLimit\RateLimiter;
 
 /**
- * Bearer token authentication of the MCP endpoint, without any change to security.yaml:
+ * Bearer token authentication of the MCP endpoint, without any change to security.yaml
+ * (both listeners run after the router, priority 32, so the matched route decides):
  *
  * - before the firewall: every request needs a valid access token issued for this channel to an
  *   enabled shop user, otherwise a 401 with the RFC 9728 "resource_metadata" pointer that starts

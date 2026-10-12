@@ -228,7 +228,8 @@ tools then work next to the B2B ones, with a separate guest cart).
   symfony/mcp-bundle through its loader extension point (`mcp.loader`), the mechanism used by
   sylius/mcp-server-plugin itself. A decorator of the MCP registry leaves out the hidden
   official tools.
-- **Authentication.** A request listener runs before the firewall on the MCP path: without a
+- **Authentication.** A request listener runs before the firewall on the MCP route (decided on
+  the route matched by the router, so encoded spellings such as `/%5Fmcp` are covered): without a
   valid bearer token, the answer is a 401 with
   `WWW-Authenticate: Bearer resource_metadata=".../.well-known/oauth-protected-resource/_mcp"`,
   which starts the OAuth flow in Claude and ChatGPT. A shop session cookie is never enough.
