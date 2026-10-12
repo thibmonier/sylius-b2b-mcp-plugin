@@ -156,6 +156,11 @@ free-text arguments (`message`) are logged as their length only.
   `mcp_connection`, owner `customer`, no arguments; failures logged, never thrown.
 - Decision: decide_approval included but disabled by default (brief); prompt injection
   mitigations documented in the README.
+- 1.1.1: `ApproveScopeGuard` removes b2b:approve from the connections while decisions are
+  disabled (sweep once per disabled period: cache warmup, first request or refresh, purge
+  command; per connection on refresh and authentication); the scope repository accepts every
+  known scope and `finalizeScopes()` keeps those the shop offers now, so an older grant's
+  refresh keeps read and cart.
 
 ## 5. Interfaces
 

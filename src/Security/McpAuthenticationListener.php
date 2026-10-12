@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Authenticator\Token\PostAuthenticationToken;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\ApproveScopeGuard;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\McpEndpoint;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\ScopeCatalog;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
@@ -46,6 +47,7 @@ final class McpAuthenticationListener
         private readonly RateLimiter $rateLimiter,
         private readonly TokenStorageInterface $tokenStorage,
         private readonly ScopeCatalog $scopeCatalog,
+        private readonly ?ApproveScopeGuard $approveScopeGuard = null,
     ) {
     }
 
@@ -118,8 +120,11 @@ final class McpAuthenticationListener
             return null;
         }
 
-        // Never more than the connection allows now (defence in depth: narrowing also revokes).
-        $scopes = array_values(array_intersect($token->getScopes(), $connection->getScopes()));
+        // Never more than the connection allows now (defence in depth: narrowing also revokes),
+        // nor than the shop offers now (b2b:approve when decisions are disabled).
+        $this->approveScopeGuard?->enforce();
+        $this->approveScopeGuard?->enforceFor($connection);
+        $scopes = array_values(array_intersect($token->getScopes(), $connection->getScopes(), $this->scopeCatalog->supported()));
 
         return new AuthenticatedConnection($connection, $user, $customer, $channel, $scopes);
     }

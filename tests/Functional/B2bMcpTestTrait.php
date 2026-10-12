@@ -242,6 +242,19 @@ trait B2bMcpTestTrait
         return $this->connection()->fetchOne($sql, $parameters);
     }
 
+    /**
+     * A JSON column, decoded (the database may reformat it).
+     *
+     * @param list<mixed> $parameters
+     */
+    private function sqlJson(string $sql, array $parameters = []): mixed
+    {
+        $value = $this->sqlValue($sql, $parameters);
+        self::assertIsString($value);
+
+        return json_decode($value, true);
+    }
+
     /** @param list<mixed> $parameters */
     private function sqlInt(string $sql, array $parameters = []): int
     {

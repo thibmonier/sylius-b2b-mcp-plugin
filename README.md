@@ -74,6 +74,12 @@ decision is limited by the approver's approval limit; every call is audited; and
 that is not read-only: `decide_approval` is annotated as destructive). Enable it only for
 approvers who understand this.
 
+Turning `allow_decisions` off takes `b2b:approve` away from every connection for good (at the
+cache warmup of the deployment, else on the first MCP request or token refresh, and in
+`tmonier:b2b-mcp:purge`); the connections keep `b2b:read` and `b2b:cart` and their refresh keeps
+working. Turning it back on never restores the permission: each approver ticks it again on a
+new consent.
+
 ## Screenshots
 
 ![Consent page shown to the buyer when an assistant connects](docs/images/shop-ai-consent.jpg)

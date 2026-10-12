@@ -6,7 +6,19 @@ namespace Tests\Tmonier\SyliusB2bMcpPlugin\Functional;
 
 use Sylius\Component\Core\Model\CustomerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Tmonier\SyliusB2bMcpPlugin\Entity\Connection;
 use Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\ApproveScopeGuard;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\AuthorizationServerFactory;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\PsrBridge;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\Repository\AccessTokenRepository;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\Repository\AuthCodeRepository;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\Repository\ClientRepository;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\Repository\RefreshTokenRepository;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\Repository\ScopeRepository;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\ScopeCatalog;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
 
 /** The OAuth 2.1 flow as Claude and ChatGPT run it: discovery, registration, consent, PKCE, refresh. */
 final class OAuthFlowTest extends WebTestCase
@@ -354,6 +366,72 @@ final class OAuthFlowTest extends WebTestCase
         $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($query));
         self::assertCount(0, $crawler->filter('[data-test-tmonier-b2b-mcp-approve-warning]'));
         self::assertCount(2, $crawler->filter('[data-test-tmonier-b2b-mcp-scopes] li'));
+    }
+
+    /**
+     * MCP11-02: approval decisions turned off by the merchant. Grants keep working for b2b:read and
+     * b2b:cart (the refresh does not fail), lose b2b:approve for good, and turning decisions back
+     * on (the test application has them on) needs a new consent.
+     */
+    public function testTurningDecisionsOffAndOnNeverRestoresTheApprovalPermission(): void
+    {
+        $customer = $this->customer();
+        $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
+        [$verifier, $challenge] = self::pkce();
+        $this->loginShop($customer);
+        $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query(['scope' => 'b2b:read b2b:cart b2b:approve'] + $this->authorizeQuery($clientId, $challenge)));
+        $form = $crawler->filter('[data-test-tmonier-b2b-mcp-approve]')->form();
+        $field = $form['grant_approve'];
+        self::assertInstanceOf(\Symfony\Component\DomCrawler\Field\ChoiceFormField::class, $field);
+        $field->tick();
+        $this->client->submit($form);
+        $code = $this->codeFromRedirect('xyz-state');
+        $this->client->getCookieJar()->clear();
+        $tokens = $this->token(['grant_type' => 'authorization_code', 'client_id' => $clientId, 'code' => $code, 'redirect_uri' => self::REDIRECT_URI, 'code_verifier' => $verifier]);
+        $connectionId = $this->sqlInt('SELECT id FROM tmonier_b2b_mcp_connection WHERE customer_id = ?', [$customer->getId()]);
+        self::assertSame(['b2b:read', 'b2b:cart', 'b2b:approve'], $this->sqlJson('SELECT scopes FROM tmonier_b2b_mcp_connection WHERE id = ?', [$connectionId]));
+
+        // Decisions off: the refresh succeeds with b2b:read and b2b:cart only, and the connection loses b2b:approve.
+        $disabled = new ScopeCatalog(false);
+        $store = $this->service('tmonier_b2b_mcp.oauth.token_store');
+        self::assertInstanceOf(TokenStore::class, $store);
+        $guard = new ApproveScopeGuard($this->entityManager(), $disabled, new ArrayAdapter(), Connection::class);
+        $encryptionKey = self::getContainer()->getParameter('tmonier_b2b_mcp.oauth.encryption_key');
+        self::assertIsString($encryptionKey);
+        $server = AuthorizationServerFactory::create(new ClientRepository($store), new AccessTokenRepository($store), new ScopeRepository($store, $disabled, $guard), new AuthCodeRepository($store), new RefreshTokenRepository($store), $encryptionKey, 'PT1H', 'P30D', 'PT10M');
+        $bridge = new PsrBridge();
+        $response = $server->respondToAccessTokenRequest(
+            $bridge->toPsr(\Symfony\Component\HttpFoundation\Request::create('/mcp-oauth/token', 'POST', ['grant_type' => 'refresh_token', 'client_id' => $clientId, 'refresh_token' => $tokens['refresh_token']])),
+            $bridge->createPsrResponse(),
+        );
+        self::assertSame(200, $response->getStatusCode());
+        $refreshed = json_decode((string) $response->getBody(), true);
+        $accessToken = self::stringAt($refreshed, 'access_token');
+        self::assertSame(['b2b:read', 'b2b:cart'], $this->sqlJson('SELECT scopes FROM tmonier_b2b_mcp_token WHERE identifier_hash = ?', [hash('sha256', $accessToken)]));
+        self::assertSame(['b2b:read', 'b2b:cart'], $this->sqlJson('SELECT scopes FROM tmonier_b2b_mcp_connection WHERE id = ?', [$connectionId]));
+
+        // Decisions on again (the test application): reading works, approving does not without a new consent.
+        self::assertSame(0, self::intAt($this->callTool($accessToken, 'list_my_orders'), 'total'));
+        $result = $this->callTool($accessToken, 'decide_approval', ['order_number' => 'any', 'decision' => 'approve', 'idempotency_key' => 'after-reenable']);
+        self::assertStringContainsString('was not granted the "b2b:approve" permission', self::stringAt($result, 'error'));
+    }
+
+    public function testConnectionsNotUsedWhileDecisionsAreOffLoseTheApprovalPermissionToo(): void
+    {
+        $connection = null;
+        $token = $this->accessToken($this->customer(), ['b2b:read', 'b2b:cart', 'b2b:approve'], connection: $connection);
+        $cache = new ArrayAdapter();
+
+        // Sweep of a disabled period (first request, cache warmup or purge command), once.
+        (new ApproveScopeGuard($this->entityManager(), new ScopeCatalog(false), $cache, Connection::class))->enforce();
+        self::assertSame(['b2b:read', 'b2b:cart'], $this->sqlJson('SELECT scopes FROM tmonier_b2b_mcp_connection WHERE id = ?', [$connection->getId()]));
+        self::assertTrue($cache->hasItem('tmonier_b2b_mcp.approve_scope_swept'));
+        // Back on: the flag is reset for the next disabled period, the permission stays removed.
+        (new ApproveScopeGuard($this->entityManager(), new ScopeCatalog(true), $cache, Connection::class))->enforce();
+        self::assertFalse($cache->hasItem('tmonier_b2b_mcp.approve_scope_swept'));
+
+        $result = $this->callTool($token, 'decide_approval', ['order_number' => 'any', 'decision' => 'approve', 'idempotency_key' => 'unused-grant-1']);
+        self::assertStringContainsString('was not granted the "b2b:approve" permission', self::stringAt($result, 'error'));
     }
 
     public function testDenyingSendsAccessDeniedBack(): void

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Tests\Tmonier\SyliusB2bMcpPlugin\Unit;
 
 use Doctrine\ORM\EntityManagerInterface;
+use League\OAuth2\Server\Entities\ClientEntityInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Clock\MockClock;
 use Tmonier\SyliusB2bMcpPlugin\Entity\Connection;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\Entity\ScopeEntity;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Repository\ScopeRepository;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\ScopeCatalog;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
@@ -19,12 +21,27 @@ final class ScopeCatalogTest extends TestCase
         $disabled = new ScopeCatalog(false);
         self::assertSame(['b2b:read', 'b2b:cart'], $disabled->supported());
         self::assertFalse($disabled->isSupported('b2b:approve'));
-        self::assertNull($this->repository($disabled)->getScopeEntityByIdentifier('b2b:approve'));
+        // Known scope (the refresh of an older grant must not fail); finalizeScopes() drops it.
+        self::assertNotNull($this->repository($disabled)->getScopeEntityByIdentifier('b2b:approve'));
 
         $enabled = new ScopeCatalog(true);
         self::assertSame(['b2b:read', 'b2b:cart', 'b2b:approve'], $enabled->supported());
         self::assertNotNull($this->repository($enabled)->getScopeEntityByIdentifier('b2b:approve'));
         self::assertNull($this->repository($enabled)->getScopeEntityByIdentifier('admin'));
+    }
+
+    public function testATokenNeverGetsAScopeTheShopNoLongerOffers(): void
+    {
+        $connection = new Connection();
+        $connection->setScopes(['b2b:read', 'b2b:cart', 'b2b:approve']);
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('find')->willReturn($connection);
+        $repository = new ScopeRepository(new TokenStore($entityManager, new MockClock(), Connection::class), new ScopeCatalog(false));
+        $requested = array_map(static fn (string $scope): ScopeEntity => new ScopeEntity($scope), ['b2b:read', 'b2b:cart', 'b2b:approve']);
+
+        $granted = $repository->finalizeScopes($requested, 'refresh_token', $this->createMock(ClientEntityInterface::class), '7');
+
+        self::assertSame(['b2b:read', 'b2b:cart'], array_map(static fn (\League\OAuth2\Server\Entities\ScopeEntityInterface $scope): string => $scope->getIdentifier(), $granted));
     }
 
     private function repository(ScopeCatalog $catalog): ScopeRepository

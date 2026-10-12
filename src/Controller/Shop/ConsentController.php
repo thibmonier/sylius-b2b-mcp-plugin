@@ -23,6 +23,7 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\Entity\ClientEntity;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Entity\UserEntity;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\KnownAssistants;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\PsrBridge;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\ScopeCatalog;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Scopes;
 use Twig\Environment;
 
@@ -44,6 +45,7 @@ final class ConsentController
         private readonly ChannelContextInterface $channelContext,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
         private readonly Environment $twig,
+        private readonly ScopeCatalog $scopeCatalog,
     ) {
     }
 
@@ -124,7 +126,7 @@ final class ConsentController
         return $this->psrBridge->toSymfony($response);
     }
 
-    /** @return list<string> */
+    /** @return list<string> scopes requested and offered by the shop now */
     private function scopeIdentifiers(AuthorizationRequestInterface $authorizationRequest): array
     {
         $scopes = [];
@@ -132,6 +134,6 @@ final class ConsentController
             $scopes[] = $scope->getIdentifier();
         }
 
-        return Scopes::normalize($scopes);
+        return array_values(array_intersect(Scopes::normalize($scopes), $this->scopeCatalog->supported()));
     }
 }

@@ -22,6 +22,7 @@ final class PurgeCommand extends Command
         private readonly ToolCallRepository $toolCallRepository,
         private readonly ClockInterface $clock,
         private readonly int $auditRetentionDays,
+        private readonly ?\Tmonier\SyliusB2bMcpPlugin\OAuth\ApproveScopeGuard $approveScopeGuard = null,
     ) {
         parent::__construct();
     }
@@ -30,10 +31,14 @@ final class PurgeCommand extends Command
     {
         $tokens = $this->tokenStore->purgeExpired();
         $clients = $this->tokenStore->purgeUnusedClients();
+        $approvals = $this->approveScopeGuard?->sweep() ?? 0;
         $keys = $this->idempotencyStore->purge();
         $calls = $this->toolCallRepository->deleteOlderThan($this->clock->now()->modify(\sprintf('-%d days', $this->auditRetentionDays)));
 
         $output->writeln(\sprintf('Deleted %d expired tokens, %d unused clients, %d idempotency keys and %d audit log entries.', $tokens, $clients, $keys, $calls));
+        if ($approvals > 0) {
+            $output->writeln(\sprintf('Approval decisions are disabled: b2b:approve removed from %d connections.', $approvals));
+        }
 
         return Command::SUCCESS;
     }

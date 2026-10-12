@@ -31,6 +31,8 @@ use Tmonier\SyliusB2bMcpPlugin\Mcp\Tool\ReorderTool;
 use Tmonier\SyliusB2bMcpPlugin\Mcp\ToolRunner;
 use Tmonier\SyliusB2bMcpPlugin\Menu\AccountMenuListener;
 use Tmonier\SyliusB2bMcpPlugin\Menu\AdminMenuListener;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\ApproveScopeCacheWarmer;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\ApproveScopeGuard;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\AuthorizationRequestValidator;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\AuthorizationServerFactory;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\ClientRegistrar;
@@ -74,7 +76,14 @@ return static function (ContainerConfigurator $container): void {
     $services->set('tmonier_b2b_mcp.oauth.access_token_repository', AccessTokenRepository::class)->args([service('tmonier_b2b_mcp.oauth.token_store')]);
     $services->set('tmonier_b2b_mcp.oauth.refresh_token_repository', RefreshTokenRepository::class)->args([service('tmonier_b2b_mcp.oauth.token_store')]);
     $services->set('tmonier_b2b_mcp.oauth.auth_code_repository', AuthCodeRepository::class)->args([service('tmonier_b2b_mcp.oauth.token_store')]);
-    $services->set('tmonier_b2b_mcp.oauth.scope_repository', ScopeRepository::class)->args([service('tmonier_b2b_mcp.oauth.token_store'), service('tmonier_b2b_mcp.oauth.scope_catalog')]);
+    $services->set('tmonier_b2b_mcp.oauth.approve_scope_guard', ApproveScopeGuard::class)
+        ->args([service('doctrine.orm.entity_manager'), service('tmonier_b2b_mcp.oauth.scope_catalog'), service('cache.app'), param('tmonier_b2b_mcp.model.connection.class')]);
+
+    $services->set('tmonier_b2b_mcp.oauth.approve_scope_cache_warmer', ApproveScopeCacheWarmer::class)
+        ->args([service('tmonier_b2b_mcp.oauth.approve_scope_guard'), service('logger')])
+        ->tag('kernel.cache_warmer');
+
+    $services->set('tmonier_b2b_mcp.oauth.scope_repository', ScopeRepository::class)->args([service('tmonier_b2b_mcp.oauth.token_store'), service('tmonier_b2b_mcp.oauth.scope_catalog'), service('tmonier_b2b_mcp.oauth.approve_scope_guard')]);
 
     $services->set('tmonier_b2b_mcp.oauth.authorization_server', AuthorizationServer::class)
         ->factory([AuthorizationServerFactory::class, 'create'])
@@ -135,6 +144,7 @@ return static function (ContainerConfigurator $container): void {
             service('tmonier_b2b_mcp.rate_limiter'),
             service('security.token_storage'),
             service('tmonier_b2b_mcp.oauth.scope_catalog'),
+            service('tmonier_b2b_mcp.oauth.approve_scope_guard'),
         ])
         ->tag('kernel.event_listener', ['event' => 'kernel.request', 'method' => 'authenticate', 'priority' => 9])
         ->tag('kernel.event_listener', ['event' => 'kernel.request', 'method' => 'setSecurityToken', 'priority' => 7]);
@@ -181,6 +191,7 @@ return static function (ContainerConfigurator $container): void {
             service('sylius.context.channel'),
             service('security.csrf.token_manager'),
             service('twig'),
+            service('tmonier_b2b_mcp.oauth.scope_catalog'),
         ]);
 
     $controllers->set('tmonier_b2b_mcp.controller.shop.connection', ConnectionController::class)
@@ -308,6 +319,7 @@ return static function (ContainerConfigurator $container): void {
             service('tmonier_b2b_mcp.repository.tool_call'),
             service('clock'),
             param('tmonier_b2b_mcp.audit_retention_days'),
+            service('tmonier_b2b_mcp.oauth.approve_scope_guard'),
         ])
         ->tag('console.command');
 

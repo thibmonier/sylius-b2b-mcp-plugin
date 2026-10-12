@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.1 (unreleased)
+
+### Fixed
+
+- The comment of an approval decision is audited as its length only (MCP11-01).
+- Disabling `approvals.allow_decisions` no longer breaks the refresh of grants that had
+  `b2b:approve` (they keep `b2b:read` and `b2b:cart`) and removes `b2b:approve` from the
+  connections for good: re-enabling needs a new consent (MCP11-02).
+- Tool outputs drop format characters (bidi overrides, zero-width) from customer-written text
+  (MCP11-03).
+
 ## 1.1.0 (2026-10-12)
 
 ### Added
