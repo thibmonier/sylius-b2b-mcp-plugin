@@ -78,6 +78,7 @@ trait B2bMcpTestTrait
     /** An access token of a new connection of the customer (OAuth flow skipped). */
     private function accessToken(CustomerInterface $customer, array $scopes = Scopes::ALL, ?string $channelCode = null, ?ConnectionInterface &$connection = null): string
     {
+        $customer = $this->managed($customer);
         $this->entityManager()->flush();
         /** @var ClientRegistrar $registrar */
         $registrar = $this->service('tmonier_b2b_mcp.oauth.client_registrar');
@@ -215,6 +216,8 @@ trait B2bMcpTestTrait
     private function order(CustomerInterface $customer, ProductVariantInterface ...$variants): OrderInterface
     {
         $channel = $this->channel();
+        $customer = $this->managed($customer);
+        $variants = array_map(fn (ProductVariantInterface $variant): ProductVariantInterface => $this->managed($variant), $variants);
         /** @var FactoryInterface<OrderInterface> $orderFactory */
         $orderFactory = $this->service('sylius.factory.order');
         $order = $orderFactory->createNew();
@@ -297,7 +300,7 @@ trait B2bMcpTestTrait
     private function paymentMethod(): PaymentMethodInterface
     {
         if (null !== $this->paymentMethod) {
-            return $this->paymentMethod;
+            return $this->paymentMethod = $this->managed($this->paymentMethod);
         }
         /** @var PaymentMethodFactoryInterface<PaymentMethodInterface> $factory */
         $factory = $this->service('sylius.factory.payment_method');
@@ -337,7 +340,7 @@ trait B2bMcpTestTrait
     private function shippingMethod(): ShippingMethodInterface
     {
         if (null !== $this->shippingMethod) {
-            return $this->shippingMethod;
+            return $this->shippingMethod = $this->managed($this->shippingMethod);
         }
 
         $channel = $this->channel();
@@ -395,17 +398,36 @@ trait B2bMcpTestTrait
     /** The cart of the customer as the shop sees it after login. */
     private function cartOf(CustomerInterface $customer): ?OrderInterface
     {
-        $this->entityManager()->clear();
         /** @var \Sylius\Component\Core\Repository\OrderRepositoryInterface<OrderInterface> $repository */
         $repository = $this->service('sylius.repository.order');
-        $customer = $this->entityManager()->find(CustomerInterface::class, $customer->getId());
-        self::assertInstanceOf(CustomerInterface::class, $customer);
-
+        $customer = $this->managed($customer);
         return $repository->findLatestNotEmptyCartByChannelAndCustomer($this->channel(), $customer);
+    }
+
+    /**
+     * The managed instance of an entity: the requests of the browser reset the entity manager.
+     *
+     * @template T of object
+     *
+     * @param T $entity
+     *
+     * @return T
+     */
+    private function managed(object $entity): object
+    {
+        if ($this->entityManager()->contains($entity) || !method_exists($entity, 'getId') || null === $entity->getId()) {
+            return $entity;
+        }
+        // Metadata name, never $entity::class: Doctrine proxies on PHP < 8.4.
+        $managed = $this->entityManager()->find($this->entityManager()->getClassMetadata($entity::class)->getName(), $entity->getId());
+        self::assertNotNull($managed);
+
+        return $managed;
     }
 
     private function loginShop(CustomerInterface $customer): void
     {
+        $customer = $this->managed($customer);
         $user = $customer->getUser();
         self::assertInstanceOf(ShopUserInterface::class, $user);
         $this->entityManager()->flush();

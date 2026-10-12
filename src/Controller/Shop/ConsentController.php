@@ -89,6 +89,9 @@ final class ConsentController
                 $this->scopeIdentifiers($authorizationRequest),
             );
             $authorizationRequest->setUser(new UserEntity((string) $connection->getId()));
+        } else {
+            // league/oauth2-server wants a user even to deny; no connection is created.
+            $authorizationRequest->setUser(new UserEntity('0'));
         }
         $authorizationRequest->setAuthorizationApproved($approved);
 

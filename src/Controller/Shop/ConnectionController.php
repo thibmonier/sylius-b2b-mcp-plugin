@@ -43,13 +43,12 @@ final class ConnectionController
     public function revokeAction(Request $request, int $id): Response
     {
         $customer = $this->customer();
-        if (!$this->csrfTokenManager->isTokenValid(new CsrfToken('tmonier_b2b_mcp_revoke_' . $id, (string) $request->request->get('_csrf_token')))) {
-            throw new AccessDeniedHttpException('Invalid CSRF token.');
-        }
-
         $connection = $this->connectionRepository->find($id);
         if (null === $connection || null === $customer->getId() || $connection->getCustomer()?->getId() !== $customer->getId()) {
             throw new NotFoundHttpException();
+        }
+        if (!$this->csrfTokenManager->isTokenValid(new CsrfToken('tmonier_b2b_mcp_revoke_' . $id, (string) $request->request->get('_csrf_token')))) {
+            throw new AccessDeniedHttpException('Invalid CSRF token.');
         }
         $this->connectionManager->revoke($connection);
 
