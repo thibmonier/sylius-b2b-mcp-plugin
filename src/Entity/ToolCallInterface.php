@@ -23,6 +23,8 @@ interface ToolCallInterface extends ResourceInterface
 
     public function getConnection(): ?ConnectionInterface;
 
+    public function getCustomer(): ?\Sylius\Component\Core\Model\CustomerInterface;
+
     public function getCustomerEmail(): ?string;
 
     public function getClientName(): ?string;

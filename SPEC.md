@@ -71,6 +71,8 @@ resource indicator check (RFC 8707).
 | `tmonier_b2b_mcp_tool_call` | Audit log: connection (`SET NULL`), customer e-mail, client name, channel, tool, arguments (truncated JSON), outcome, message, duration, IP. |
 
 `Connection` and `ToolCall` are Sylius resources (admin grids); the others are plain entities.
+Audit entries and idempotency keys reference the customer with `ON DELETE CASCADE` (erasure);
+free-text arguments (`message`) are logged as their length only.
 
 ## 3. Rules
 

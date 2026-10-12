@@ -106,6 +106,30 @@ final class PluginToolsTest extends WebTestCase
         self::assertSame('Volume price for 50 units?', $this->sqlValue('SELECT m.body FROM tmonier_quote_request_message m INNER JOIN tmonier_quote_request q ON q.id = m.quote_request_id WHERE q.number = ?', [$number]));
     }
 
+    public function testTheAuditLogKeepsNoFreeTextAndGoesWithTheCustomer(): void
+    {
+        $customer = $this->customer();
+        $customerId = $customer->getId();
+        $token = $this->accessToken($customer);
+        $this->callTool($token, 'list_my_orders');
+        $this->callTool($token, 'request_quote', ['source' => 'lines', 'lines' => [['sku' => (string) $this->variant()->getCode(), 'quantity' => 2]], 'message' => 'Call me on +33 6 12 34 56 78', 'idempotency_key' => 'gdpr-quote-1']);
+
+        $arguments = $this->sqlValue("SELECT arguments FROM tmonier_b2b_mcp_tool_call WHERE customer_id = ? AND tool = 'request_quote'", [$customerId]);
+        self::assertIsString($arguments);
+        self::assertStringContainsString('"message":"[28 characters]"', $arguments);
+        self::assertStringNotContainsString('+33', $arguments);
+        self::assertSame(2, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_tool_call WHERE customer_id = ?', [$customerId]));
+        self::assertSame(1, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_idempotency WHERE customer_id = ?', [$customerId]));
+
+        // Erasure, even straight in the database: the audit entries and idempotency keys go too.
+        $this->connection()->executeStatement('DELETE FROM tmonier_quote_request WHERE customer_id = ?', [$customerId]);
+        $this->connection()->executeStatement('DELETE FROM sylius_shop_user WHERE customer_id = ?', [$customerId]);
+        $this->connection()->executeStatement('DELETE FROM sylius_customer WHERE id = ?', [$customerId]);
+
+        self::assertSame(0, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_tool_call WHERE customer_email = ?', [$customer->getEmail()]));
+        self::assertSame(0, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_idempotency WHERE customer_id = ?', [$customerId]));
+    }
+
     public function testAQuoteRequestFromTheCart(): void
     {
         $customer = $this->customer();

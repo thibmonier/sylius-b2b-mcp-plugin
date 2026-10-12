@@ -14,6 +14,9 @@ final class ToolCallLogger
 {
     private const MAX_ARGUMENTS_LENGTH = 2000;
 
+    /** Free text written by the customer: only its length is recorded. */
+    private const FREE_TEXT_ARGUMENTS = ['message'];
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly LoggerInterface $logger,
@@ -23,6 +26,11 @@ final class ToolCallLogger
     /** @param array<string, mixed> $arguments */
     public function log(?AuthenticatedConnection $connection, string $tool, array $arguments, string $outcome, ?string $message, int $durationMs, ?string $ipAddress): void
     {
+        foreach (self::FREE_TEXT_ARGUMENTS as $name) {
+            if (\is_string($arguments[$name] ?? null)) {
+                $arguments[$name] = \sprintf('[%d characters]', mb_strlen($arguments[$name]));
+            }
+        }
         $encoded = json_encode($arguments, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES | \JSON_INVALID_UTF8_SUBSTITUTE);
         $encoded = false === $encoded ? '{}' : $encoded;
         if (mb_strlen($encoded) > self::MAX_ARGUMENTS_LENGTH) {

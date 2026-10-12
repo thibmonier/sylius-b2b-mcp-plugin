@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Tmonier\SyliusB2bMcpPlugin\Entity;
 
-/** Result of a cart-changing tool call, replayed when the assistant retries with the same key. */
+use Sylius\Component\Core\Model\CustomerInterface;
+
+/**
+ * Result of a cart-changing tool call, replayed when the assistant retries with the same key.
+ * Written with DBAL by IdempotencyStore; the rows go with the customer (GDPR erasure).
+ */
 class IdempotencyRecord
 {
     protected ?int $id = null;
@@ -14,7 +19,7 @@ class IdempotencyRecord
     private \DateTimeImmutable $createdAt;
 
     public function __construct(
-        private int $customerId,
+        private CustomerInterface $customer,
         private string $tool,
         private string $idempotencyKey,
         private string $requestHash,
@@ -27,9 +32,9 @@ class IdempotencyRecord
         return $this->id;
     }
 
-    public function getCustomerId(): int
+    public function getCustomer(): CustomerInterface
     {
-        return $this->customerId;
+        return $this->customer;
     }
 
     public function getTool(): string

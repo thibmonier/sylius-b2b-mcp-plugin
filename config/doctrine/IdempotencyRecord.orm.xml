@@ -14,12 +14,15 @@
             <generator strategy="AUTO" />
         </id>
 
-        <field name="customerId" column="customer_id" type="integer" />
         <field name="tool" column="tool" type="string" length="64" />
         <field name="idempotencyKey" column="idempotency_key" type="string" length="128" />
         <field name="requestHash" column="request_hash" type="string" length="64" />
         <field name="response" column="response" type="text" nullable="true" />
         <field name="createdAt" column="created_at" type="datetime_immutable" />
+
+        <many-to-one field="customer" target-entity="Sylius\Component\Customer\Model\CustomerInterface">
+            <join-column name="customer_id" referenced-column-name="id" nullable="false" on-delete="CASCADE" />
+        </many-to-one>
     </entity>
 
 </doctrine-mapping>

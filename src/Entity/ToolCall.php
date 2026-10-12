@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace Tmonier\SyliusB2bMcpPlugin\Entity;
 
+use Sylius\Component\Core\Model\CustomerInterface;
+
 class ToolCall implements ToolCallInterface
 {
     protected ?int $id = null;
 
     protected \DateTimeImmutable $createdAt;
+
+    /** The entries go with the customer (GDPR erasure). */
+    protected ?CustomerInterface $customer;
 
     public function __construct(
         protected ?ConnectionInterface $connection,
@@ -23,6 +28,12 @@ class ToolCall implements ToolCallInterface
         protected ?string $ipAddress,
     ) {
         $this->createdAt = new \DateTimeImmutable();
+        $this->customer = $connection?->getCustomer();
+    }
+
+    public function getCustomer(): ?CustomerInterface
+    {
+        return $this->customer;
     }
 
     public function getId(): ?int

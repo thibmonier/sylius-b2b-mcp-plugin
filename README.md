@@ -259,6 +259,21 @@ tools then work next to the B2B ones, with a separate guest cart).
   `idempotency_key`: a retry with the same key and arguments returns the stored result
   (`"replayed": true`), the same key with other arguments is refused.
 
+## Personal data
+
+- **Audit log** (`tmonier_b2b_mcp_tool_call`): customer, e-mail, assistant name, IP address of
+  the assistant's server, tool, arguments (free text written by the customer, such as the
+  message of a quote request, is replaced by its length), outcome. Kept `audit_retention_days`
+  (90 by default, `tmonier:b2b-mcp:purge`). Purpose: security and support of the merchant's
+  own service; document it in your privacy policy.
+- **Idempotency keys**: the result of cart-changing calls, kept `idempotency_ttl_hours` (24).
+- **Connections and tokens**: customer, assistant, channel, scopes, dates; tokens are stored
+  hashed and purged a day after they expire.
+- Deleting a customer deletes their connections, tokens, audit entries and idempotency keys
+  (foreign keys `ON DELETE CASCADE`, so also when the row is deleted outside Doctrine).
+- The assistant (Anthropic, OpenAI) receives the data returned by the tools as an independent
+  controller under its own terms: tell your customers in your privacy policy.
+
 ## Demo data
 
 The test application loads the fixtures of the companion plugins: `b2b@example.com` / `sylius`
