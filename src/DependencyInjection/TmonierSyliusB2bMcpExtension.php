@@ -137,7 +137,8 @@ final class TmonierSyliusB2bMcpExtension extends AbstractResourceExtension imple
 
         $path = self::DEFAULT_ENDPOINT_PATH;
         foreach ($container->getExtensionConfig('mcp') as $mcpConfig) {
-            $candidate = $mcpConfig['http']['path'] ?? null;
+            $http = $mcpConfig['http'] ?? null;
+            $candidate = \is_array($http) ? ($http['path'] ?? null) : null;
             if (\is_string($candidate) && '' !== $candidate && !str_contains($candidate, '%')) {
                 $path = '/' . ltrim($candidate, '/');
             }

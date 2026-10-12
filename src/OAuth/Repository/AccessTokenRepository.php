@@ -26,7 +26,7 @@ final class AccessTokenRepository implements AccessTokenRepositoryInterface
         foreach ($scopes as $scope) {
             $token->addScope($scope);
         }
-        if (null !== $userIdentifier) {
+        if (null !== $userIdentifier && '' !== $userIdentifier) {
             $token->setUserIdentifier($userIdentifier);
         }
 

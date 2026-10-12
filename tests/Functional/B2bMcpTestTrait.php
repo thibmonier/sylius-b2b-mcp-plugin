@@ -75,8 +75,14 @@ trait B2bMcpTestTrait
 
     // MCP over HTTP
 
-    /** An access token of a new connection of the customer (OAuth flow skipped). */
-    private function accessToken(CustomerInterface $customer, array $scopes = Scopes::ALL, ?string $channelCode = null, ?ConnectionInterface &$connection = null): string
+    /**
+     * An access token of a new connection of the customer (OAuth flow skipped).
+     *
+     * @param list<string> $scopes
+     *
+     * @param-out ConnectionInterface $connection
+     */
+    private function accessToken(CustomerInterface $customer, array $scopes = Scopes::ALL, ?string $channelCode = null, mixed &$connection = null): string
     {
         $customer = $this->managed($customer);
         $this->entityManager()->flush();
@@ -99,7 +105,7 @@ trait B2bMcpTestTrait
      *
      * @param array<string, mixed> $params
      *
-     * @return array<string, mixed> the JSON-RPC response
+     * @return array<mixed> the JSON-RPC response
      */
     private function rpc(string $token, string $method, array $params = []): array
     {
@@ -111,7 +117,7 @@ trait B2bMcpTestTrait
             ]]);
             self::assertSame(200, $this->client->getResponse()->getStatusCode(), (string) $this->client->getResponse()->getContent());
             self::assertArrayHasKey('result', $initialize);
-            $this->mcpSessionId = (string) $this->client->getResponse()->headers->get('Mcp-Session-Id');
+            $this->mcpSessionId = $this->client->getResponse()->headers->get('Mcp-Session-Id');
             $this->post($token, ['jsonrpc' => '2.0', 'method' => 'notifications/initialized']);
         }
 
@@ -123,7 +129,7 @@ trait B2bMcpTestTrait
      *
      * @param array<string, mixed> $arguments
      *
-     * @return array<string, mixed>
+     * @return array<mixed>
      */
     private function callTool(string $token, string $name, array $arguments = []): array
     {
@@ -132,24 +138,18 @@ trait B2bMcpTestTrait
         $result = $response['result'];
         self::assertIsArray($result);
         if (true === ($result['isError'] ?? false)) {
-            $content = $result['content'] ?? [];
-            self::assertIsArray($content);
-            $first = $content[0] ?? [];
-            self::assertIsArray($first);
-
-            return ['error' => (string) ($first['text'] ?? '')];
+            return ['error' => self::stringAt($result, 'content', 0, 'text')];
         }
         $structured = $result['structuredContent'] ?? null;
         self::assertIsArray($structured, json_encode($result, \JSON_THROW_ON_ERROR));
 
-        /** @var array<string, mixed> $structured */
         return $structured;
     }
 
     /**
      * @param array<string, mixed> $message
      *
-     * @return array<string, mixed>
+     * @return array<mixed>
      */
     private function post(string $token, array $message): array
     {
@@ -169,8 +169,86 @@ trait B2bMcpTestTrait
         $decoded = json_decode($content, true);
         self::assertIsArray($decoded, $content);
 
-        /** @var array<string, mixed> $decoded */
         return $decoded;
+    }
+
+    // Typed access to the decoded JSON
+
+    /** The value at the given keys, every level being an array. */
+    private static function at(mixed $data, string|int ...$path): mixed
+    {
+        foreach ($path as $key) {
+            self::assertIsArray($data);
+            self::assertArrayHasKey($key, $data);
+            $data = $data[$key];
+        }
+
+        return $data;
+    }
+
+    /** @return array<mixed> */
+    private static function arrayAt(mixed $data, string|int ...$path): array
+    {
+        $value = self::at($data, ...$path);
+        self::assertIsArray($value);
+
+        return $value;
+    }
+
+    private static function stringAt(mixed $data, string|int ...$path): string
+    {
+        $value = self::at($data, ...$path);
+        self::assertIsString($value);
+
+        return $value;
+    }
+
+    private static function intAt(mixed $data, string|int ...$path): int
+    {
+        $value = self::at($data, ...$path);
+        self::assertIsInt($value);
+
+        return $value;
+    }
+
+    /**
+     * The items of a list (at the given keys) indexed by one of their string fields.
+     *
+     * @return array<string, array<mixed>>
+     */
+    private static function indexBy(mixed $data, string $field, string|int ...$path): array
+    {
+        $indexed = [];
+        foreach (self::arrayAt($data, ...$path) as $item) {
+            $indexed[self::stringAt($item, $field)] = self::arrayAt($item);
+        }
+
+        return $indexed;
+    }
+
+    /** @return list<mixed> one field of every item of a list */
+    private static function column(mixed $data, string $field, string|int ...$path): array
+    {
+        return array_values(array_map(static fn (mixed $item): mixed => self::at($item, $field), self::arrayAt($data, ...$path)));
+    }
+
+    /**
+     * First column of the first row of an SQL query.
+     *
+     * @param list<mixed> $parameters
+     */
+    private function sqlValue(string $sql, array $parameters = []): mixed
+    {
+        return $this->connection()->fetchOne($sql, $parameters);
+    }
+
+    /** @param list<mixed> $parameters */
+    private function sqlInt(string $sql, array $parameters = []): int
+    {
+        $value = $this->sqlValue($sql, $parameters);
+        self::assertIsNumeric($value);
+
+        return (int) $value;
     }
 
     // Shop data
@@ -215,6 +293,11 @@ trait B2bMcpTestTrait
     /** A placed order of the customer with the given variants (2 units each by default). */
     private function order(CustomerInterface $customer, ProductVariantInterface ...$variants): OrderInterface
     {
+        return $this->orderPaidWith($this->paymentMethod(), $customer, ...$variants);
+    }
+
+    private function orderPaidWith(PaymentMethodInterface $paymentMethod, CustomerInterface $customer, ProductVariantInterface ...$variants): OrderInterface
+    {
         $channel = $this->channel();
         $customer = $this->managed($customer);
         $variants = array_map(fn (ProductVariantInterface $variant): ProductVariantInterface => $this->managed($variant), $variants);
@@ -249,7 +332,7 @@ trait B2bMcpTestTrait
         $this->apply($order, OrderCheckoutTransitions::TRANSITION_SELECT_SHIPPING);
         $payment = $order->getLastPayment();
         self::assertNotNull($payment);
-        $payment->setMethod($this->paymentMethod());
+        $payment->setMethod($this->managed($paymentMethod));
         $this->apply($order, OrderCheckoutTransitions::TRANSITION_SELECT_PAYMENT);
         $this->apply($order, OrderCheckoutTransitions::TRANSITION_COMPLETE);
         $this->entityManager()->flush();
@@ -258,7 +341,7 @@ trait B2bMcpTestTrait
     }
 
     /** An enabled, untracked variant of a new product sold in the channel. */
-    private function variant(int $price = 2500): ProductVariantInterface
+    private function variant(int $price = 2500, ?string $pricedChannelCode = null): ProductVariantInterface
     {
         $channel = $this->channel();
         /** @var ProductFactoryInterface<ProductInterface> $productFactory */
@@ -286,7 +369,7 @@ trait B2bMcpTestTrait
         $variant->setTracked(false);
         $variant->setShippingRequired(true);
         $pricing = $pricingFactory->createNew();
-        $pricing->setChannelCode($channel->getCode());
+        $pricing->setChannelCode($pricedChannelCode ?? $channel->getCode());
         $pricing->setPrice($price);
         $pricing->setOriginalPrice($price);
         $variant->addChannelPricing($pricing);
@@ -401,6 +484,7 @@ trait B2bMcpTestTrait
         /** @var \Sylius\Component\Core\Repository\OrderRepositoryInterface<OrderInterface> $repository */
         $repository = $this->service('sylius.repository.order');
         $customer = $this->managed($customer);
+
         return $repository->findLatestNotEmptyCartByChannelAndCustomer($this->channel(), $customer);
     }
 

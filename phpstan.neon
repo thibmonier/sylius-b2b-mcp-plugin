@@ -18,8 +18,11 @@ parameters:
         - '/Parameter #1 \$configuration of method Symfony\\Component\\DependencyInjection\\Extension\\Extension::processConfiguration\(\) expects Symfony\\Component\\Config\\Definition\\ConfigurationInterface, Symfony\\Component\\Config\\Definition\\ConfigurationInterface\|null given\./'
         -
             identifier: missingType.iterableValue
-        # Workflow events are generic since Symfony 8.1 only; the listener supports 6.4 to 8.
+        # mcp/sdk types the input schema as an array of properties with a "required" key, but its
+        # own schema generator writes an empty object (stdClass) and no "required" when a tool has
+        # no argument, which is what JSON Schema expects.
         -
-            identifier: missingType.generics
+            message: '#^Parameter \#2 \$inputSchema of class Mcp\\Schema\\Tool constructor expects#'
             paths:
-                - src/EventListener/TradeCreditWorkflowListener.php
+                - src/Mcp/Tool
+                - tests/Unit

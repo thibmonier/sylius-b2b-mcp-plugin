@@ -6,12 +6,12 @@ namespace Tests\Tmonier\SyliusB2bMcpPlugin\Functional;
 
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\OrderItemInterface;
+use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Scopes;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Factory\CompanyMemberFactoryInterface;
-use Sylius\Resource\Factory\FactoryInterface;
 
 /** list_my_orders, get_order, reorder and get_checkout_link through the MCP endpoint. */
 final class OrderToolsTest extends WebTestCase
@@ -31,9 +31,9 @@ final class OrderToolsTest extends WebTestCase
 
     public function testTheToolsAreListedNextToTheCatalogToolsOfTheOfficialServer(): void
     {
-        $tools = $this->rpc($this->accessToken($this->customer()), 'tools/list')['result']['tools'] ?? null;
-        self::assertIsArray($tools);
-        $names = array_column($tools, 'name');
+        $response = $this->rpc($this->accessToken($this->customer()), 'tools/list');
+        $tools = self::indexBy($response, 'name', 'result', 'tools');
+        $names = array_keys($tools);
 
         foreach (['list_my_orders', 'get_order', 'reorder', 'get_checkout_link', 'quick_order_add', 'request_quote', 'list_my_quotes', 'get_trade_credit_statement', 'search_products', 'fetch_product'] as $name) {
             self::assertContains($name, $names);
@@ -42,10 +42,9 @@ final class OrderToolsTest extends WebTestCase
         foreach (['complete_checkout', 'create_order', 'select_payment_method', 'update_order_address'] as $name) {
             self::assertNotContains($name, $names);
         }
-        $reorder = $tools[array_search('reorder', $names, true)];
-        self::assertSame(['order_number', 'idempotency_key'], $reorder['inputSchema']['required']);
-        self::assertFalse($reorder['annotations']['readOnlyHint']);
-        self::assertTrue($tools[array_search('list_my_orders', $names, true)]['annotations']['readOnlyHint']);
+        self::assertSame(['order_number', 'idempotency_key'], self::at($tools, 'reorder', 'inputSchema', 'required'));
+        self::assertFalse(self::at($tools, 'reorder', 'annotations', 'readOnlyHint'));
+        self::assertTrue(self::at($tools, 'list_my_orders', 'annotations', 'readOnlyHint'));
     }
 
     public function testACustomerOnlySeesTheirOwnOrders(): void
@@ -57,19 +56,20 @@ final class OrderToolsTest extends WebTestCase
 
         $list = $this->callTool($token, 'list_my_orders');
         self::assertSame(1, $list['total']);
-        self::assertSame($own->getNumber(), $list['orders'][0]['number']);
-        self::assertSame('55.00', $list['orders'][0]['total']);
-        self::assertArrayNotHasKey('placed_by', $list['orders'][0]);
+        self::assertSame($own->getNumber(), self::at($list, 'orders', 0, 'number'));
+        self::assertSame('55.00', self::at($list, 'orders', 0, 'total'));
+        self::assertArrayNotHasKey('placed_by', self::arrayAt($list, 'orders', 0));
 
         $detail = $this->callTool($token, 'get_order', ['order_number' => (string) $own->getNumber()]);
         self::assertSame($own->getNumber(), $detail['number']);
-        self::assertSame(2, $detail['items'][0]['quantity']);
-        self::assertSame('25.00', $detail['items'][0]['unit_price']);
-        self::assertSame('Springfield', $detail['shipping_address']['city']);
+        self::assertSame(2, self::at($detail, 'items', 0, 'quantity'));
+        self::assertSame('25.00', self::at($detail, 'items', 0, 'unit_price'));
+        self::assertSame('Springfield', self::at($detail, 'shipping_address', 'city'));
 
         $foreign = $this->callTool($token, 'get_order', ['order_number' => (string) $other->getNumber()]);
         self::assertSame(sprintf('No order "%s" visible to you on this shop.', $other->getNumber()), $foreign['error']);
-        self::assertSame($foreign['error'], str_replace('999999999', (string) $other->getNumber(), $this->callTool($token, 'get_order', ['order_number' => '999999999'])['error']));
+        $unknown = self::stringAt($this->callTool($token, 'get_order', ['order_number' => '999999999']), 'error');
+        self::assertSame($foreign['error'], str_replace('999999999', (string) $other->getNumber(), $unknown), 'Same answer for unknown and forbidden orders.');
     }
 
     public function testPagination(): void
@@ -83,9 +83,9 @@ final class OrderToolsTest extends WebTestCase
         $page = $this->callTool($token, 'list_my_orders', ['limit' => 2, 'page' => 1]);
         self::assertSame(3, $page['total']);
         self::assertSame(2, $page['pages']);
-        self::assertCount(2, $page['orders']);
-        self::assertSame($newest->getNumber(), $page['orders'][0]['number']);
-        self::assertCount(1, $this->callTool($token, 'list_my_orders', ['limit' => 2, 'page' => 2])['orders']);
+        self::assertCount(2, self::arrayAt($page, 'orders'));
+        self::assertSame($newest->getNumber(), self::at($page, 'orders', 0, 'number'));
+        self::assertCount(1, self::arrayAt($this->callTool($token, 'list_my_orders', ['limit' => 2, 'page' => 2]), 'orders'));
     }
 
     public function testCompanyOrdersFollowTheRolesOfTheCompanyAccountsPlugin(): void
@@ -97,8 +97,8 @@ final class OrderToolsTest extends WebTestCase
 
         $adminToken = $this->accessToken($admin);
         $companyOrders = $this->callTool($adminToken, 'list_my_orders', ['scope' => 'company']);
-        self::assertSame([$buyerOrder->getNumber()], array_column($companyOrders['orders'], 'number'));
-        self::assertSame('Bob Buyer', $companyOrders['orders'][0]['placed_by']);
+        self::assertSame([$buyerOrder->getNumber()], self::column($companyOrders, 'number', 'orders'));
+        self::assertSame('Bob Buyer', self::at($companyOrders, 'orders', 0, 'placed_by'));
         self::assertSame(0, $this->callTool($adminToken, 'list_my_orders')['total']);
         $detail = $this->callTool($adminToken, 'get_order', ['order_number' => (string) $buyerOrder->getNumber()]);
         self::assertSame('Bob Buyer', $detail['placed_by']);
@@ -128,15 +128,18 @@ final class OrderToolsTest extends WebTestCase
         $result = $this->callTool($token, 'reorder', ['order_number' => (string) $order->getNumber(), 'idempotency_key' => 'reorder-0001']);
 
         self::assertTrue($result['applied']);
-        $lines = array_column($result['lines'], null, 'sku');
-        self::assertSame('added', $lines[$kept->getCode()]['status']);
-        self::assertFalse($lines[$kept->getCode()]['price_changed']);
-        self::assertSame('added', $lines[$repriced->getCode()]['status']);
-        self::assertTrue($lines[$repriced->getCode()]['price_changed']);
-        self::assertSame('10.00', $lines[$repriced->getCode()]['previous_unit_price']);
-        self::assertSame('12.00', $lines[$repriced->getCode()]['current_unit_price']);
-        self::assertSame('disabled', $lines[$withdrawn->getCode()]['status']);
-        self::assertSame(0, $lines[$withdrawn->getCode()]['added_quantity']);
+        $lines = self::indexBy($result, 'sku', 'lines');
+        $kept = (string) $kept->getCode();
+        $repriced = (string) $repriced->getCode();
+        $withdrawn = (string) $withdrawn->getCode();
+        self::assertSame('added', self::at($lines, $kept, 'status'));
+        self::assertFalse(self::at($lines, $kept, 'price_changed'));
+        self::assertSame('added', self::at($lines, $repriced, 'status'));
+        self::assertTrue(self::at($lines, $repriced, 'price_changed'));
+        self::assertSame('10.00', self::at($lines, $repriced, 'previous_unit_price'));
+        self::assertSame('12.00', self::at($lines, $repriced, 'current_unit_price'));
+        self::assertSame('disabled', self::at($lines, $withdrawn, 'status'));
+        self::assertSame(0, self::at($lines, $withdrawn, 'added_quantity'));
         self::assertSame('http://localhost/en_US/cart/', $result['checkout_url']);
 
         $cart = $this->cartOf($customer);
@@ -177,7 +180,7 @@ final class OrderToolsTest extends WebTestCase
 
         $result = $this->callTool($token, 'reorder', ['order_number' => (string) $order->getNumber(), 'idempotency_key' => 'scope-check-1']);
 
-        self::assertStringContainsString('was not granted the "b2b:cart" permission', $result['error']);
+        self::assertStringContainsString('was not granted the "b2b:cart" permission', self::stringAt($result, 'error'));
         self::assertNull($this->cartOf($customer));
         self::assertSame(1, $this->callTool($token, 'list_my_orders')['total']);
     }
@@ -194,7 +197,7 @@ final class OrderToolsTest extends WebTestCase
         $this->callTool($token, 'reorder', ['order_number' => (string) $this->order($customer)->getNumber(), 'idempotency_key' => 'checkout-link']);
         $link = $this->callTool($token, 'get_checkout_link');
         self::assertSame('http://localhost/en_US/cart/', $link['checkout_url']);
-        self::assertSame(2, $link['cart']['items_quantity']);
+        self::assertSame(2, self::at($link, 'cart', 'items_quantity'));
 
         // The shop shows the same cart once the customer signs in.
         $this->client->getCookieJar()->clear();

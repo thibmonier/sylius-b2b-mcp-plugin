@@ -6,6 +6,7 @@ imports:
     - { resource: "@TmonierSyliusCompanyAccountsPlugin/config/config.yaml" }
     - { resource: "@TmonierSyliusB2bMcpPlugin/config/config.yaml" }
     - { resource: "dbal_savepoints.php" }
+    - { resource: "services.php" }
 
 tmonier_sylius_b2b_mcp:
     rate_limit:

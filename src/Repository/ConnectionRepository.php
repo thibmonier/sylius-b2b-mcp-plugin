@@ -10,11 +10,15 @@ use Sylius\Component\Core\Model\CustomerInterface;
 use Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface;
 use Tmonier\SyliusB2bMcpPlugin\Entity\OAuthClient;
 
-/**
- * @extends EntityRepository<ConnectionInterface>
- */
 class ConnectionRepository extends EntityRepository
 {
+    public function findOneById(int $id): ?ConnectionInterface
+    {
+        $connection = $this->find($id);
+
+        return $connection instanceof ConnectionInterface ? $connection : null;
+    }
+
     public function findActive(CustomerInterface $customer, OAuthClient $client, string $channelCode): ?ConnectionInterface
     {
         /** @var ConnectionInterface|null $connection */

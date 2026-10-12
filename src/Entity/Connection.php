@@ -67,7 +67,7 @@ class Connection implements ConnectionInterface
 
     public function getScopes(): array
     {
-        return array_values($this->scopes);
+        return $this->scopes;
     }
 
     public function setScopes(array $scopes): void

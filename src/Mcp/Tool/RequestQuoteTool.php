@@ -7,6 +7,7 @@ namespace Tmonier\SyliusB2bMcpPlugin\Mcp\Tool;
 use Mcp\Schema\Tool;
 use Mcp\Schema\ToolAnnotations;
 use Sylius\Component\Core\Model\OrderItemInterface;
+use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
@@ -110,7 +111,7 @@ final class RequestQuoteTool implements B2bToolInterface
             $skipped = [];
             foreach ($quantities as $code => [$variant, $quantity]) {
                 $product = $variant?->getProduct();
-                $line = null === $variant || !$variant->isEnabled() || null === $product || !$product->isEnabled() || !$product->hasChannel($channel)
+                $line = null === $variant || !$variant->isEnabled() || !$product instanceof ProductInterface || !$product->isEnabled() || !$product->hasChannel($channel)
                     ? null
                     : $this->quoteRequestFactory->createLine($quoteRequest, $variant, $quantity);
                 if (null === $line) {

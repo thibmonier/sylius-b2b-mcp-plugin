@@ -7,7 +7,7 @@ namespace Tmonier\SyliusB2bMcpPlugin\Entity;
 /** Result of a cart-changing tool call, replayed when the assistant retries with the same key. */
 class IdempotencyRecord
 {
-    private ?int $id = null;
+    protected ?int $id = null;
 
     private ?string $response = null;
 

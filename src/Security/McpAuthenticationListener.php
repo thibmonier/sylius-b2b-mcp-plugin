@@ -100,6 +100,7 @@ final class McpAuthenticationListener
         $connection = $token?->getConnection();
         $customer = $connection?->getCustomer();
         $user = $customer instanceof CustomerInterface ? $customer->getUser() : null;
+
         try {
             $channel = $this->channelContext->getChannel();
         } catch (ChannelNotFoundException) {

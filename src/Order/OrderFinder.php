@@ -86,10 +86,6 @@ final class OrderFinder
 
     private function createOwnQueryBuilder(AuthenticatedConnection $connection): QueryBuilder
     {
-        if (!method_exists($this->orderRepository, 'createByCustomerAndChannelIdQueryBuilder')) {
-            throw new \LogicException('The order repository must extend the Sylius core order repository.');
-        }
-        /** @var QueryBuilder $queryBuilder */
         $queryBuilder = $this->orderRepository->createByCustomerAndChannelIdQueryBuilder($connection->customer->getId(), $connection->channel->getId());
 
         return $queryBuilder

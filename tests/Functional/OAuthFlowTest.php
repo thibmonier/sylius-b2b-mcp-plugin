@@ -97,7 +97,7 @@ final class OAuthFlowTest extends WebTestCase
     {
         $customer = $this->customer();
         $client = $this->register(['client_name' => 'Claude', 'redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']);
-        $clientId = (string) $client['client_id'];
+        $clientId = self::stringAt($client, 'client_id');
         [$verifier, $challenge] = self::pkce();
 
         // Not signed in on the shop: the consent page sends the customer to the login page.
@@ -127,10 +127,10 @@ final class OAuthFlowTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('no-store', (string) $this->client->getResponse()->headers->get('Cache-Control'));
         self::assertSame('Bearer', $tokens['token_type']);
-        $accessToken = (string) $tokens['access_token'];
+        $accessToken = self::stringAt($tokens, 'access_token');
         self::assertSame(80, \strlen($accessToken));
-        self::assertSame(1, (int) $this->connection()->fetchOne('SELECT COUNT(*) FROM tmonier_b2b_mcp_token WHERE identifier_hash = ?', [hash('sha256', $accessToken)]));
-        self::assertSame(0, (int) $this->connection()->fetchOne('SELECT COUNT(*) FROM tmonier_b2b_mcp_token WHERE identifier_hash = ?', [$accessToken]));
+        self::assertSame(1, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_token WHERE identifier_hash = ?', [hash('sha256', $accessToken)]));
+        self::assertSame(0, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_token WHERE identifier_hash = ?', [$accessToken]));
 
         $this->client->getCookieJar()->clear();
         $tools = $this->rpc($accessToken, 'tools/list');
@@ -141,19 +141,19 @@ final class OAuthFlowTest extends WebTestCase
         $refreshed = $this->token(['grant_type' => 'refresh_token', 'client_id' => $clientId, 'refresh_token' => $tokens['refresh_token']]);
         self::assertResponseIsSuccessful();
         $this->mcpSessionId = null;
-        self::assertArrayHasKey('result', $this->rpc((string) $refreshed['access_token'], 'tools/list'));
+        self::assertArrayHasKey('result', $this->rpc(self::stringAt($refreshed, 'access_token'), 'tools/list'));
 
         // Replaying the spent refresh token revokes the whole connection (stolen token).
         $this->token(['grant_type' => 'refresh_token', 'client_id' => $clientId, 'refresh_token' => $tokens['refresh_token']]);
         self::assertResponseStatusCodeSame(400);
-        $this->post((string) $refreshed['access_token'], ['jsonrpc' => '2.0', 'id' => 99, 'method' => 'tools/list']);
+        $this->post(self::stringAt($refreshed, 'access_token'), ['jsonrpc' => '2.0', 'id' => 99, 'method' => 'tools/list']);
         self::assertResponseStatusCodeSame(401);
     }
 
     public function testAReplayedAuthorizationCodeRevokesTheTokensItGave(): void
     {
         $customer = $this->customer();
-        $clientId = (string) $this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none'])['client_id'];
+        $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
         [$verifier, $challenge] = self::pkce();
         $code = $this->approve($customer, $clientId, $challenge);
         $request = ['grant_type' => 'authorization_code', 'client_id' => $clientId, 'code' => $code, 'redirect_uri' => self::REDIRECT_URI, 'code_verifier' => $verifier];
@@ -163,13 +163,13 @@ final class OAuthFlowTest extends WebTestCase
         $this->token($request);
         self::assertResponseStatusCodeSame(400);
 
-        $this->post((string) $tokens['access_token'], ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list']);
+        $this->post(self::stringAt($tokens, 'access_token'), ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list']);
         self::assertResponseStatusCodeSame(401);
     }
 
     public function testPkceWithS256IsRequired(): void
     {
-        $clientId = (string) $this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none'])['client_id'];
+        $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
         $query = $this->authorizeQuery($clientId, 'ignored');
 
         unset($query['code_challenge'], $query['code_challenge_method']);
@@ -185,7 +185,7 @@ final class OAuthFlowTest extends WebTestCase
 
     public function testTheResourceIndicatorMustNameThisEndpoint(): void
     {
-        $clientId = (string) $this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none'])['client_id'];
+        $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
         [, $challenge] = self::pkce();
 
         $this->client->request('GET', '/mcp-oauth/authorize?' . http_build_query($this->authorizeQuery($clientId, $challenge) + ['resource' => 'https://other.example.com/mcp']));
@@ -199,7 +199,7 @@ final class OAuthFlowTest extends WebTestCase
     public function testDenyingSendsAccessDeniedBack(): void
     {
         $customer = $this->customer();
-        $clientId = (string) $this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none'])['client_id'];
+        $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
         [, $challenge] = self::pkce();
         $this->loginShop($customer);
 
@@ -209,20 +209,20 @@ final class OAuthFlowTest extends WebTestCase
         $location = (string) $this->client->getResponse()->headers->get('Location');
         self::assertStringStartsWith(self::REDIRECT_URI . '?', $location);
         self::assertStringContainsString('error=access_denied', $location);
-        self::assertSame(0, (int) $this->connection()->fetchOne('SELECT COUNT(*) FROM tmonier_b2b_mcp_connection WHERE customer_id = ?', [$customer->getId()]));
+        self::assertSame(0, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_connection WHERE customer_id = ?', [$customer->getId()]));
     }
 
     public function testTheConsentNeedsAValidCsrfToken(): void
     {
         $customer = $this->customer();
-        $clientId = (string) $this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none'])['client_id'];
+        $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
         [, $challenge] = self::pkce();
         $this->loginShop($customer);
 
         $this->client->request('POST', '/en_US/account/ai-assistants/authorize?' . http_build_query($this->authorizeQuery($clientId, $challenge)), ['decision' => 'approve', '_csrf_token' => 'forged']);
 
         self::assertResponseStatusCodeSame(403);
-        self::assertSame(0, (int) $this->connection()->fetchOne('SELECT COUNT(*) FROM tmonier_b2b_mcp_connection WHERE customer_id = ?', [$customer->getId()]));
+        self::assertSame(0, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_connection WHERE customer_id = ?', [$customer->getId()]));
     }
 
     public function testTheCustomerDisconnectsTheAssistantFromTheAccount(): void
@@ -280,16 +280,16 @@ final class OAuthFlowTest extends WebTestCase
     {
         $customer = $this->customer();
         $client = $this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']);
-        $clientId = (string) $client['client_id'];
+        $clientId = self::stringAt($client, 'client_id');
         [$verifier, $challenge] = self::pkce();
         $tokens = $this->token(['grant_type' => 'authorization_code', 'client_id' => $clientId, 'code' => $this->approve($customer, $clientId, $challenge), 'redirect_uri' => self::REDIRECT_URI, 'code_verifier' => $verifier]);
 
         // Another client cannot revoke it.
-        $other = (string) $this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none'])['client_id'];
+        $other = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
         $this->client->request('POST', '/mcp-oauth/revoke', ['client_id' => $other, 'token' => $tokens['access_token']]);
         self::assertResponseIsSuccessful();
         $this->client->getCookieJar()->clear();
-        self::assertArrayHasKey('result', $this->rpc((string) $tokens['access_token'], 'tools/list'));
+        self::assertArrayHasKey('result', $this->rpc(self::stringAt($tokens, 'access_token'), 'tools/list'));
 
         $this->client->request('POST', '/mcp-oauth/revoke', ['client_id' => $clientId, 'token' => $tokens['refresh_token']]);
         self::assertResponseIsSuccessful();
@@ -298,7 +298,7 @@ final class OAuthFlowTest extends WebTestCase
 
         $this->client->request('POST', '/mcp-oauth/revoke', ['client_id' => $clientId, 'token' => $tokens['access_token']]);
         self::assertResponseIsSuccessful();
-        $this->post((string) $tokens['access_token'], ['jsonrpc' => '2.0', 'id' => 3, 'method' => 'tools/list']);
+        $this->post(self::stringAt($tokens, 'access_token'), ['jsonrpc' => '2.0', 'id' => 3, 'method' => 'tools/list']);
         self::assertResponseStatusCodeSame(401);
     }
 
@@ -379,7 +379,7 @@ final class OAuthFlowTest extends WebTestCase
     /**
      * @param array<string, mixed> $metadata
      *
-     * @return array<string, mixed>
+     * @return array<mixed>
      */
     private function register(array $metadata): array
     {
@@ -391,7 +391,7 @@ final class OAuthFlowTest extends WebTestCase
     /**
      * @param array<string, mixed> $parameters
      *
-     * @return array<string, mixed>
+     * @return array<mixed>
      */
     private function token(array $parameters): array
     {
@@ -400,13 +400,12 @@ final class OAuthFlowTest extends WebTestCase
         return $this->json();
     }
 
-    /** @return array<string, mixed> */
+    /** @return array<mixed> */
     private function json(): array
     {
         $data = json_decode((string) $this->client->getResponse()->getContent(), true);
         self::assertIsArray($data, (string) $this->client->getResponse()->getContent());
 
-        /** @var array<string, mixed> $data */
         return $data;
     }
 }

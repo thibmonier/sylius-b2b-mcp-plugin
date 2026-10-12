@@ -38,7 +38,7 @@ final class AuthorizationRequestValidator
 
         $client = $authorizationRequest->getClient();
         $redirectUri = $authorizationRequest->getRedirectUri() ?? ($client->getRedirectUri()[0] ?? '');
-        if (!\is_string($redirectUri) || !$this->redirectUriPolicy->isAllowed($redirectUri)) {
+        if (!$this->redirectUriPolicy->isAllowed($redirectUri)) {
             throw OAuthServerException::invalidRequest('redirect_uri', 'This redirect URI is no longer allowed by the shop.');
         }
 

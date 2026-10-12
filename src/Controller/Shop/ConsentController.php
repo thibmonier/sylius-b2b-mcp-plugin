@@ -88,7 +88,11 @@ final class ConsentController
                 (string) $this->channelContext->getChannel()->getCode(),
                 $this->scopeIdentifiers($authorizationRequest),
             );
-            $authorizationRequest->setUser(new UserEntity((string) $connection->getId()));
+            $connectionId = $connection->getId();
+            if (null === $connectionId) {
+                throw new \LogicException('The connection is persisted.');
+            }
+            $authorizationRequest->setUser(new UserEntity((string) $connectionId));
         } else {
             // league/oauth2-server wants a user even to deny; no connection is created.
             $authorizationRequest->setUser(new UserEntity('0'));

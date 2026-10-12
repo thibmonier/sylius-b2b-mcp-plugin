@@ -18,9 +18,15 @@ final class ClientEntity implements ClientEntityInterface
         return $this->client;
     }
 
+    /** @return non-empty-string */
     public function getIdentifier(): string
     {
-        return $this->client->getIdentifier();
+        $identifier = $this->client->getIdentifier();
+        if ('' === $identifier) {
+            throw new \LogicException('An OAuth client has an identifier.');
+        }
+
+        return $identifier;
     }
 
     public function getName(): string

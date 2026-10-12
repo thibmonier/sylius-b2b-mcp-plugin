@@ -10,7 +10,7 @@ namespace Tmonier\SyliusB2bMcpPlugin\Entity;
  */
 class OAuthClient
 {
-    private ?int $id = null;
+    protected ?int $id = null;
 
     private \DateTimeImmutable $createdAt;
 
@@ -42,7 +42,7 @@ class OAuthClient
     /** @return list<string> */
     public function getRedirectUris(): array
     {
-        return array_values($this->redirectUris);
+        return $this->redirectUris;
     }
 
     public function getSecretHash(): ?string

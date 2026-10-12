@@ -43,7 +43,7 @@ final class ConnectionController
     public function revokeAction(Request $request, int $id): Response
     {
         $customer = $this->customer();
-        $connection = $this->connectionRepository->find($id);
+        $connection = $this->connectionRepository->findOneById($id);
         if (null === $connection || null === $customer->getId() || $connection->getCustomer()?->getId() !== $customer->getId()) {
             throw new NotFoundHttpException();
         }

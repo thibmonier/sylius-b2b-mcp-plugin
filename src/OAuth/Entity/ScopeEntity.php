@@ -8,10 +8,12 @@ use League\OAuth2\Server\Entities\ScopeEntityInterface;
 
 final class ScopeEntity implements ScopeEntityInterface
 {
+    /** @param non-empty-string $identifier */
     public function __construct(private readonly string $identifier)
     {
     }
 
+    /** @return non-empty-string */
     public function getIdentifier(): string
     {
         return $this->identifier;

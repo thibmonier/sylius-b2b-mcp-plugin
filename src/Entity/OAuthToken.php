@@ -16,7 +16,7 @@ class OAuthToken
 
     public const TYPE_AUTH_CODE = 'code';
 
-    private ?int $id = null;
+    protected ?int $id = null;
 
     private \DateTimeImmutable $createdAt;
 
@@ -62,7 +62,7 @@ class OAuthToken
     /** @return list<string> */
     public function getScopes(): array
     {
-        return array_values($this->scopes);
+        return $this->scopes;
     }
 
     public function getExpiresAt(): \DateTimeImmutable

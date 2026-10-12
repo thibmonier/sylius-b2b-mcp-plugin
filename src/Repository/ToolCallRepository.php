@@ -5,11 +5,7 @@ declare(strict_types=1);
 namespace Tmonier\SyliusB2bMcpPlugin\Repository;
 
 use Sylius\Bundle\ResourceBundle\Doctrine\ORM\EntityRepository;
-use Tmonier\SyliusB2bMcpPlugin\Entity\ToolCallInterface;
 
-/**
- * @extends EntityRepository<ToolCallInterface>
- */
 class ToolCallRepository extends EntityRepository
 {
     public function deleteOlderThan(\DateTimeImmutable $date): int

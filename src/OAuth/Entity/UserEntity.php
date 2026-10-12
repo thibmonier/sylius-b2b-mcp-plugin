@@ -9,10 +9,12 @@ use League\OAuth2\Server\Entities\UserEntityInterface;
 /** The "user" of the tokens is the connection (customer, assistant, channel) approved by the customer. */
 final class UserEntity implements UserEntityInterface
 {
+    /** @param non-empty-string $connectionId */
     public function __construct(private readonly string $connectionId)
     {
     }
 
+    /** @return non-empty-string */
     public function getIdentifier(): string
     {
         return $this->connectionId;

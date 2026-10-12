@@ -44,7 +44,10 @@ final class ToolRunner
             if (!$connection->hasScope($scope)) {
                 throw new ToolRefusal(\sprintf('This connection was not granted the "%s" permission. Reconnect the assistant to the shop and approve it.', $scope));
             }
-            $customerId = (int) $connection->customer->getId();
+            $customerId = $connection->customer->getId();
+            if (!\is_int($customerId)) {
+                throw new ToolRefusal('Not signed in: this tool needs a shop account connected to the assistant (OAuth).');
+            }
 
             if (null !== $idempotencyKey) {
                 if (!IdempotencyStore::isValidKey($idempotencyKey)) {
@@ -61,8 +64,8 @@ final class ToolRunner
 
             $result = $handler($connection);
 
-            if ($claimed && null !== $idempotencyKey) {
-                $this->idempotencyStore->complete($customerId, $tool, $idempotencyKey, $result);
+            if ($claimed) {
+                $this->idempotencyStore->complete($customerId, $tool, (string) $idempotencyKey, $result);
             }
             $this->log($connection, $tool, $arguments, ToolCallInterface::OUTCOME_SUCCESS, null, $start);
 
@@ -82,9 +85,10 @@ final class ToolRunner
 
     private function release(?AuthenticatedConnection $connection, string $tool, ?string $idempotencyKey, bool $claimed): void
     {
-        if ($claimed && null !== $connection && null !== $idempotencyKey) {
+        $customerId = $connection?->customer->getId();
+        if ($claimed && \is_int($customerId) && null !== $idempotencyKey) {
             try {
-                $this->idempotencyStore->release((int) $connection->customer->getId(), $tool, $idempotencyKey);
+                $this->idempotencyStore->release($customerId, $tool, $idempotencyKey);
             } catch (\Throwable) {
                 // A claim left behind expires after a few minutes.
             }

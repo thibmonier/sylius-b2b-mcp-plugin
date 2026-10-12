@@ -8,6 +8,7 @@ use Doctrine\Persistence\ObjectManager;
 use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\OrderItemInterface;
+use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Inventory\Checker\AvailabilityCheckerInterface;
 use Sylius\Component\Order\Modifier\OrderItemQuantityModifierInterface;
@@ -51,14 +52,14 @@ final class CoreCartLinesAdder implements CartLinesAdderInterface
 
         $checks = $this->check($cart, $lines);
         $hasErrors = [] !== array_filter($checks, static fn (array $check): bool => $check[0]->isError());
-        $valid = array_filter($checks, static fn (array $check): bool => null !== $check[1]);
+        /** @var list<array{CartLineResult, ProductVariantInterface}> $valid */
+        $valid = array_values(array_filter($checks, static fn (array $check): bool => null !== $check[1]));
         if ([] === $valid || ($allOrNothing && $hasErrors)) {
             return new CartAddResult(array_map(static fn (array $check): CartLineResult => null === $check[1] ? $check[0] : self::with($check[0], CartLineResult::SKIPPED), $checks), false);
         }
 
         $before = self::quantities($cart);
         foreach ($valid as [$line, $variant]) {
-            \assert($variant instanceof ProductVariantInterface);
             $existing = self::findItem($cart, $variant);
             if (null !== $existing) {
                 $this->quantityModifier->modify($existing, $existing->getQuantity() + $line->requestedQuantity);
@@ -120,7 +121,7 @@ final class CoreCartLinesAdder implements CartLinesAdderInterface
             $status = match (true) {
                 $line->quantity < 1 => CartLineResult::INVALID_QUANTITY,
                 !$variant->isEnabled() || null === $product || !$product->isEnabled() => CartLineResult::DISABLED,
-                !$channel instanceof ChannelInterface || !$product->hasChannel($channel) => CartLineResult::NOT_IN_CHANNEL,
+                !$channel instanceof ChannelInterface || !$product instanceof ProductInterface || !$product->hasChannel($channel) => CartLineResult::NOT_IN_CHANNEL,
                 null === $variant->getChannelPricingForChannel($channel) => CartLineResult::NO_CHANNEL_PRICING,
                 $total > $this->quantityLimit => CartLineResult::QUANTITY_LIMIT_EXCEEDED,
                 !$this->availabilityChecker->isStockSufficient($variant, $total) => CartLineResult::INSUFFICIENT_STOCK,

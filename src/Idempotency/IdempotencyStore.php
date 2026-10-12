@@ -80,11 +80,11 @@ final class IdempotencyStore
             throw new ToolRefusal('A call with this idempotency key is still running. Retry in a moment.');
         }
 
+        /** @var array<string, mixed>|null $response */
         $response = json_decode((string) $row['response'], true);
         if (!\is_array($response)) {
             throw new ToolRefusal('The stored result of this idempotency key is unreadable. Use a new key.');
         }
-        /** @var array<string, mixed> $response */
 
         return $response;
     }
@@ -124,16 +124,13 @@ final class IdempotencyStore
     /** @return array{id: int|string, request_hash: string, response: string|null, created_at: string}|null */
     private function find(int $customerId, string $tool, string $key): ?array
     {
+        /** @var array{id: int|string, request_hash: string, response: string|null, created_at: string}|false $row */
         $row = $this->connection->fetchAssociative(
             'SELECT id, request_hash, response, created_at FROM ' . self::TABLE . ' WHERE customer_id = :customer AND tool = :tool AND idempotency_key = :key',
             ['customer' => $customerId, 'tool' => $tool, 'key' => $key],
         );
-        if (false === $row) {
-            return null;
-        }
-        /** @var array{id: int|string, request_hash: string, response: string|null, created_at: string} $row */
 
-        return $row;
+        return false === $row ? null : $row;
     }
 
     /** @param array{response: string|null, created_at: string} $row */

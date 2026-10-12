@@ -35,27 +35,28 @@ final class ClientRegistrar
         if (!\is_array($redirectUris) || [] === $redirectUris || \count($redirectUris) > self::MAX_REDIRECT_URIS || !array_is_list($redirectUris)) {
             throw new ClientRegistrationException('invalid_redirect_uri', \sprintf('Between 1 and %d redirect URIs are required.', self::MAX_REDIRECT_URIS));
         }
+        $allowedUris = [];
         foreach ($redirectUris as $uri) {
             if (!\is_string($uri) || !$this->redirectUriPolicy->isAllowed($uri)) {
                 throw new ClientRegistrationException('invalid_redirect_uri', 'This redirect URI is not allowed by the shop.');
             }
+            $allowedUris[] = $uri;
         }
-        /** @var list<string> $redirectUris */
         $authMethod = $metadata['token_endpoint_auth_method'] ?? 'client_secret_basic';
         if (!\is_string($authMethod) || !\in_array($authMethod, self::AUTH_METHODS, true)) {
             throw new ClientRegistrationException('invalid_client_metadata', 'Supported token endpoint authentication methods: ' . implode(', ', self::AUTH_METHODS) . '.');
         }
         $grantTypes = $metadata['grant_types'] ?? ['authorization_code'];
-        if (!\is_array($grantTypes) || [] !== array_diff($grantTypes, ['authorization_code', 'refresh_token'])) {
+        if (!self::isSubsetOf($grantTypes, ['authorization_code', 'refresh_token'])) {
             throw new ClientRegistrationException('invalid_client_metadata', 'Supported grant types: authorization_code, refresh_token.');
         }
         $responseTypes = $metadata['response_types'] ?? ['code'];
-        if (!\is_array($responseTypes) || [] !== array_diff($responseTypes, ['code'])) {
+        if (!self::isSubsetOf($responseTypes, ['code'])) {
             throw new ClientRegistrationException('invalid_client_metadata', 'Supported response types: code.');
         }
         $name = $metadata['client_name'] ?? null;
 
-        [$client, $secret] = $this->create(\is_string($name) ? $name : '', $redirectUris, self::AUTH_METHOD_NONE !== $authMethod);
+        [$client, $secret] = $this->create(\is_string($name) ? $name : '', $allowedUris, self::AUTH_METHOD_NONE !== $authMethod);
 
         return array_filter([
             'client_id' => $client->getIdentifier(),
@@ -68,6 +69,21 @@ final class ClientRegistrar
             'response_types' => ['code'],
             'token_endpoint_auth_method' => $authMethod,
         ], static fn (mixed $value): bool => null !== $value);
+    }
+
+    /** @param list<string> $supported */
+    private static function isSubsetOf(mixed $values, array $supported): bool
+    {
+        if (!\is_array($values)) {
+            return false;
+        }
+        foreach ($values as $value) {
+            if (!\in_array($value, $supported, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

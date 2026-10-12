@@ -32,7 +32,7 @@ final class ConnectionController
         if (!$this->csrfTokenManager->isTokenValid(new CsrfToken('tmonier_b2b_mcp_admin_revoke_' . $id, (string) $request->request->get('_csrf_token')))) {
             throw new AccessDeniedHttpException('Invalid CSRF token.');
         }
-        $connection = $this->connectionRepository->find($id);
+        $connection = $this->connectionRepository->findOneById($id);
         if (null === $connection) {
             throw new NotFoundHttpException();
         }

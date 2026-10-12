@@ -19,7 +19,7 @@ final class ScopeRepository implements ScopeRepositoryInterface
 
     public function getScopeEntityByIdentifier(string $identifier): ?ScopeEntityInterface
     {
-        return \in_array($identifier, Scopes::ALL, true) ? new ScopeEntity($identifier) : null;
+        return '' !== $identifier && \in_array($identifier, Scopes::ALL, true) ? new ScopeEntity($identifier) : null;
     }
 
     /** Never more than what the customer approved on the connection (also after a refresh). */

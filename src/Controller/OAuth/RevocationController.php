@@ -46,7 +46,7 @@ final class RevocationController
         $candidates = [OAuthToken::TYPE_ACCESS => $value, OAuthToken::TYPE_REFRESH => $this->refreshTokenDecoder->getIdentifier($value)];
         foreach ($candidates as $type => $identifier) {
             $token = null === $identifier ? null : $this->tokenStore->find($type, $identifier);
-            if (null !== $token && null !== $identifier && $token->getConnection()->getClient()?->getIdentifier() === $clientId) {
+            if (null !== $token && $token->getConnection()->getClient()?->getIdentifier() === $clientId) {
                 $this->tokenStore->revoke($type, $identifier);
             }
         }

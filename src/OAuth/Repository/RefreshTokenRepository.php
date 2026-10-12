@@ -23,7 +23,7 @@ final class RefreshTokenRepository implements RefreshTokenRepositoryInterface
     {
     }
 
-    public function getNewRefreshToken(): ?RefreshTokenEntityInterface
+    public function getNewRefreshToken(): RefreshTokenEntityInterface
     {
         return new RefreshTokenEntity();
     }

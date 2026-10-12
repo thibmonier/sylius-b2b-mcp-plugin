@@ -6,8 +6,8 @@ namespace Tmonier\SyliusB2bMcpPlugin\Order;
 
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\OrderItemInterface;
-use Sylius\Component\Core\Model\PaymentInterface;
 use Sylius\Component\Core\Model\ShipmentInterface;
+use Sylius\Component\Payment\Model\PaymentInterface;
 
 /**
  * Orders and carts as data for the assistant. Amounts are decimal strings in the order currency.
