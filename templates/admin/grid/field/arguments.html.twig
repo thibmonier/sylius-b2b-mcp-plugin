@@ -1,1 +1,5 @@
-<code class="small text-break">{{ data|length > 160 ? data|slice(0, 160) ~ '…' : data }}</code>
+{% if data in ['', '[]', '{}'] %}
+    <span class="text-secondary" {{ sylius_test_html_attribute('tmonier-b2b-mcp-no-arguments') }}>–</span>
+{% else %}
+    <code class="small text-break">{{ data|length > 160 ? data|slice(0, 160) ~ '…' : data }}</code>
+{% endif %}

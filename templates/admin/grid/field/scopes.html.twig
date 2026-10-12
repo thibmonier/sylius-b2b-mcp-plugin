@@ -1,3 +1,6 @@
-{% for scope in data %}
-    <span class="badge">{{ ('tmonier_b2b_mcp.scope.' ~ scope|replace({':': '_'}))|trans }}</span>
-{% endfor %}
+{# Compact: the scope code, its description as a tooltip (long labels kept the grid off-screen). #}
+<div class="d-flex flex-wrap gap-1">
+    {% for scope in data %}
+        <span class="badge" title="{{ ('tmonier_b2b_mcp.scope.' ~ scope|replace({':': '_'}))|trans }}" {{ sylius_test_html_attribute('tmonier-b2b-mcp-scope', scope) }}>{{ scope }}</span>
+    {% endfor %}
+</div>

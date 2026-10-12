@@ -41,6 +41,10 @@ final class AdminTest extends WebTestCase
         self::assertStringContainsString('AI assistant connections', $content);
         self::assertStringContainsString((string) $customer->getEmail(), $content);
         self::assertStringNotContainsString('tmonier_b2b_mcp.', $content, 'Every label is translated.');
+        // Compact scopes (code, description as tooltip) so that the grid fits the screen.
+        $scope = $crawler->filter('[data-test-tmonier-b2b-mcp-scope="b2b:read"]')->first();
+        self::assertSame('b2b:read', trim($scope->text()));
+        self::assertStringStartsWith('Read your orders', (string) $scope->attr('title'));
 
         $this->client->submit($crawler->filter(sprintf('[data-test-tmonier-b2b-mcp-admin-revoke="%d"] button', $connection->getId()))->form());
         self::assertResponseRedirects('/admin/ai-assistants/connections/');
@@ -69,10 +73,11 @@ final class AdminTest extends WebTestCase
         $customer = $this->customer();
         $token = $this->accessToken($customer);
         $this->callTool($token, 'get_order', ['order_number' => 'missing-order']);
+        $this->callTool($token, 'get_checkout_link');
         $this->client->getCookieJar()->clear();
         $this->loginAdmin();
 
-        $this->client->request('GET', '/admin/ai-assistants/tool-calls/?criteria[customerEmail][value]=' . urlencode((string) $customer->getEmail()));
+        $crawler = $this->client->request('GET', '/admin/ai-assistants/tool-calls/?criteria[customerEmail][value]=' . urlencode((string) $customer->getEmail()));
 
         self::assertResponseIsSuccessful();
         $content = (string) $this->client->getResponse()->getContent();
@@ -80,6 +85,7 @@ final class AdminTest extends WebTestCase
         self::assertStringContainsString('get_order', $content);
         self::assertStringContainsString('Refused', $content);
         self::assertStringContainsString('missing-order', $content);
+        self::assertCount(1, $crawler->filter('[data-test-tmonier-b2b-mcp-no-arguments]'), 'No arguments: a dash, not "[]".');
         self::assertStringNotContainsString('tmonier_b2b_mcp.', $content, 'Every label is translated.');
     }
 
