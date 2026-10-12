@@ -90,6 +90,15 @@ final class ApprovalToolsTest extends WebTestCase
 
         // The same decision retried: replayed, nothing decided twice.
         self::assertTrue($this->callTool($token, 'decide_approval', $arguments)['replayed']);
+
+        // The comment of the approver is free text: only its length is audited (refused calls too).
+        $audited = $this->connection()->fetchFirstColumn("SELECT arguments FROM tmonier_b2b_mcp_tool_call WHERE tool = 'decide_approval' AND customer_email = ?", [$this->approver->getEmail()]);
+        self::assertCount(3, $audited);
+        foreach ($audited as $arguments) {
+            self::assertIsString($arguments);
+            self::assertStringContainsString('"comment":"[17 characters]"', $arguments);
+            self::assertStringNotContainsString('OK for this month', $arguments);
+        }
     }
 
     public function testRejectingCancelsTheOrder(): void

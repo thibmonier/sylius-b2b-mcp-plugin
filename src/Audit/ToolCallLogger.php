@@ -14,8 +14,8 @@ final class ToolCallLogger
 {
     private const MAX_ARGUMENTS_LENGTH = 2000;
 
-    /** Free text written by the customer: only its length is recorded. */
-    private const FREE_TEXT_ARGUMENTS = ['message'];
+    /** Free text written by the customer (quote message, approval comment): only its length is recorded. */
+    private const FREE_TEXT_ARGUMENTS = ['message', 'comment'];
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,

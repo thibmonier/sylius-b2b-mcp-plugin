@@ -302,7 +302,7 @@ tools then work next to the B2B ones, with a separate guest cart).
 
 - **Audit log** (`tmonier_b2b_mcp_tool_call`): customer, e-mail, assistant name, IP address of
   the assistant's server, tool, arguments (free text written by the customer, such as the
-  message of a quote request, is replaced by its length), outcome. Kept `audit_retention_days`
+  message of a quote request, comment of an approval decision, is replaced by its length), outcome. Kept `audit_retention_days`
   (90 by default, `tmonier:b2b-mcp:purge`). Purpose: security and support of the merchant's
   own service; document it in your privacy policy.
 - **Idempotency keys**: the result of cart-changing calls, kept `idempotency_ttl_hours` (24).
