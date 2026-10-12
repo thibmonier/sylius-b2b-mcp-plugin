@@ -42,7 +42,9 @@
         "symfony/runtime": "^7.4 || ^8.0",
         "symfony/web-profiler-bundle": "^7.4 || ^8.0",
         "symfony/webpack-encore-bundle": "^2.2",
+        "tmonier/sylius-audit-log-plugin": "^1.0",
         "tmonier/sylius-company-accounts-plugin": "^1.0",
+        "tmonier/sylius-purchase-approval-plugin": "^1.0",
         "tmonier/sylius-quick-order-plugin": "^1.1",
         "tmonier/sylius-quote-request-plugin": "^1.0",
         "tmonier/sylius-trade-credit-plugin": "^1.0"
@@ -51,7 +53,9 @@
         "tmonier/sylius-quick-order-plugin": "quick_order_add tool (lines by SKU, same validation as the quick order page) and reorder through the quick order rules",
         "tmonier/sylius-quote-request-plugin": "request_quote and list_my_quotes tools",
         "tmonier/sylius-trade-credit-plugin": "get_trade_credit_statement tool (limit, available credit, open items, ageing)",
-        "tmonier/sylius-company-accounts-plugin": "Company orders visible to the member (per the company voters) in list_my_orders, get_order and reorder"
+        "tmonier/sylius-company-accounts-plugin": "Company orders visible to the member (per the company voters) in list_my_orders, get_order and reorder",
+        "tmonier/sylius-purchase-approval-plugin": "list_pending_approvals, the approval of an order in get_order, and (opt-in) decide_approval",
+        "tmonier/sylius-audit-log-plugin": "Tool calls, consents and revocations mirrored into its audit log and customer history"
     },
     "config": {
         "sort-packages": true,

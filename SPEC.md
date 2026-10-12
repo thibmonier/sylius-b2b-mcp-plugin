@@ -137,6 +137,26 @@ free-text arguments (`message`) are logged as their length only.
     their verified callback host; disabling dynamic registration and creating clients with the
     command is the recommended production setting when customers can enter a client ID.
 
+## 4b. Version 1.1
+
+- Purchase approval bridge (`config/services/purchase_approval.php`, loaded with the bundle):
+  `ListPendingApprovalsTool` (APPROVAL_LIST voter on the company, `ApprovalPolicy::checkApprove()`
+  / `checkReject()` for each line, channel of the request), `PurchaseApprovalStatus`
+  (`OrderApprovalStatusInterface`, null implementation otherwise) in `get_order`.
+- `DecideApprovalTool` (`config/services/purchase_approval_decisions.php`, only with
+  `approvals.allow_decisions` and the bundle): APPROVAL_DECIDE voter, then
+  `ApprovalDecisionMaker::approve()` / `reject()` with `Decider::member()` (lock, policy
+  re-checked, order cancelled on rejection, plugin events); refusals translated from the
+  plugin's `validators` keys. Scope `b2b:approve` (`ScopeCatalog`): unknown to the authorization
+  server when disabled, never a default scope, granted only when the customer ticks it on the
+  consent page (the league authorization request loses it otherwise, and `finalizeScopes` caps
+  the tokens with the connection).
+- Audit log bridge (`AuditMirrorInterface`, `AuditLogMirror` with the audit log plugin's entry
+  factory, DBAL writer and context provider): resource types `mcp_tool_call` and
+  `mcp_connection`, owner `customer`, no arguments; failures logged, never thrown.
+- Decision: decide_approval included but disabled by default (brief); prompt injection
+  mitigations documented in the README.
+
 ## 5. Interfaces
 
 - `B2bToolInterface::getDefinition()` (static MCP tool definition: name, JSON schema,

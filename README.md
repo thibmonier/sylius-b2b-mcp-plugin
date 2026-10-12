@@ -32,8 +32,10 @@ Gemini or Claude: no order and no payment happen in the assistant.
 | Request a quote | `request_quote`, `list_my_quotes` (with [tmonier/sylius-quote-request-plugin](https://github.com/thibmonier/sylius-quote-request-plugin)): from the cart or from SKU lines, with a message; the merchant answers in the shop as usual. |
 | Know the credit left | `get_trade_credit_statement` (with [tmonier/sylius-trade-credit-plugin](https://github.com/thibmonier/sylius-trade-credit-plugin)): limit, committed, available, open items, overdue amount and ageing. |
 | Company buyers | With [tmonier/sylius-company-accounts-plugin](https://github.com/thibmonier/sylius-company-accounts-plugin): `list_my_orders` with `scope: company`, `get_order` and `reorder` on the company orders, as the company roles allow (its voters decide). |
+| Approve purchase orders *(1.1)* | With [tmonier/sylius-purchase-approval-plugin](https://github.com/thibmonier/sylius-purchase-approval-plugin): `list_pending_approvals` for approvers (buyer, total against the limit, age, whether they may approve); `get_order` shows the approval of an order; **opt-in** `decide_approval` (approve or reject with a comment, same rules as the shop page) behind its own permission `b2b:approve`. |
 | Hand over to the checkout | `get_checkout_link`: the cart and the link to review it and check out on the website, signed in with the same account (Sylius loads the latest cart of the customer). |
 | Keep the assistant out of the checkout | The guest cart and checkout tools of the official server (`create_order`, `complete_checkout`, ...) are hidden by default; its catalog tools stay. |
+| One audit trail *(1.1)* | With [tmonier/sylius-audit-log-plugin](https://github.com/thibmonier/sylius-audit-log-plugin): tool calls (without arguments), consents and revocations also appear in its log and in the customer history. |
 | Stay in control | One **connection** per customer, assistant and channel: listed in *My account > AI assistants* (disconnect) and in the admin (*Customers > AI assistant connections*, revoke). **Audit log** of every tool call (customer, assistant, arguments, outcome, duration) in the admin. Rate limits per connection and on the OAuth endpoints. |
 
 Tools whose plugin is not installed are simply not registered. Translations in English, French,
@@ -51,8 +53,26 @@ German, Spanish, Italian, Dutch and Polish; MySQL, MariaDB and PostgreSQL.
 | `request_quote` | `b2b:cart` | sends a quote request (idempotency key) | quote request plugin |
 | `list_my_quotes` | `b2b:read` | nothing | quote request plugin |
 | `get_trade_credit_statement` | `b2b:read` | nothing | trade credit plugin |
+| `list_pending_approvals` | `b2b:read` | nothing | purchase approval plugin |
+| `decide_approval` | `b2b:approve` | approves or rejects (a rejected order is cancelled; idempotency key) | purchase approval plugin + `approvals.allow_decisions: true` |
 
 No tool places an order, pays, or changes the account, the addresses or the payment methods.
+
+### Approval decisions from an assistant (opt-in)
+
+`decide_approval` is **off by default**. With `approvals.allow_decisions: true`, the shop offers
+the `b2b:approve` permission; on the consent page it is a separate, **never pre-ticked**
+checkbox with a warning, and a client asking for no scope never gets it. The tool applies the
+rules of the shop page (approver of the order's company, no self-approval, approval limit, order
+still new, one decision under a lock) and records the approver as the decider.
+
+The risk is **prompt injection**: text the assistant reads (a product name, an order, a quote
+message, a web page) could try to make it approve an order. Mitigations: the tool description
+tells the model to call it only on the user's explicit request after showing the order; the
+decision is limited by the approver's approval limit; every call is audited; and
+**keep tool confirmations on in your assistant** (Claude and ChatGPT ask before running a tool
+that is not read-only: `decide_approval` is annotated as destructive). Enable it only for
+approvers who understand this.
 
 ## Screenshots
 
@@ -228,6 +248,9 @@ tmonier_sylius_b2b_mcp:
         oauth_requests_per_minute: 60         # token/revocation: per client; authorize: per IP
         client_registrations_per_hour: 60     # per IP
         cache_pool: cache.rate_limiter
+    approvals:
+        allow_decisions: false                # decide_approval and the b2b:approve permission (opt-in)
+    audit_log_bridge: true                    # with tmonier/sylius-audit-log-plugin
     max_page_size: 50
     idempotency_ttl_hours: 24
     audit_retention_days: 90
@@ -313,8 +336,9 @@ quote requests.
   open, protected by the redirect URI allow-list and the consent page (showing the host the
   assistant returns to).
 - Prices in results are decimal strings in the order currency, with two decimals like the shop.
-- The `tmonier/sylius-purchase-approval-plugin` (approvals) and the audit log plugin are not
-  bridged yet.
+- The audit log bridge records the events whatever the `sources` setting of the audit log plugin
+  (customer actions are not recorded there by default); its anonymization command covers them,
+  the deletion of a customer does not (no foreign key in that plugin).
 - Tested locally with MySQL 8.4; the MariaDB and PostgreSQL jobs of the CI matrix were not run locally.
 
 ## Development

@@ -51,7 +51,7 @@ final class TranslationsTest extends TestCase
                 if (!$file instanceof \SplFileInfo || !in_array($file->getExtension(), ['php', 'twig', 'yaml', 'xml'], true)) {
                     continue;
                 }
-                preg_match_all('/tmonier_b2b_mcp\.(?:ui|flash|scope)\.[a-z_.]*[a-z_]/', (string) file_get_contents($file->getPathname()), $matches);
+                preg_match_all('/tmonier_b2b_mcp\.(?:ui|flash|scope)\.[a-z0-9_.]*[a-z0-9_]/', (string) file_get_contents($file->getPathname()), $matches);
                 foreach ($matches[0] as $key) {
                     $used[$key] = true;
                 }

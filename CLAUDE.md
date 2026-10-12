@@ -50,6 +50,10 @@ server: `symfony server:start -d --port=8099 --no-tls`, MCP endpoint
 - `Cart/`: `CustomerCartProvider`, `CartLinesAdderInterface` (core or quick order), `CartLockChecker`.
 - `Order/`: `OrderFinder`, `OrderPresenter`, `CompanyOrdersInterface` (null or company accounts),
   `ShopUrlGenerator`, `Text`.
+- 1.1: `Approval/PurchaseApprovalStatus`, `Mcp/Tool/ListPendingApprovalsTool`,
+  `Mcp/Tool/DecideApprovalTool` (opt-in, scope `b2b:approve`, `OAuth/ScopeCatalog`),
+  `Audit/AuditLogMirror` (`AuditMirrorInterface`, null implementation by default). The test
+  application enables both plugins and `approvals.allow_decisions`.
 - `Idempotency/IdempotencyStore` (DBAL), `Audit/ToolCallLogger`, `RateLimit/RateLimiter`
   (framework rate limiters prepended by the extension), `Command/`, `Menu/`.
 - Tests: `tests/Functional/B2bMcpTestTrait` creates its own data in a rolled-back transaction,

@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.1.0 (2026-10-12)
+
+### Added
+
+- **Purchase approvals** (with tmonier/sylius-purchase-approval-plugin ^1.0):
+  `list_pending_approvals` (approvers: pending orders of the company, buyer, total against the
+  limit, age, whether they may approve), the approval of an order in `get_order`, and
+  `decide_approval` (approve / reject with a comment, idempotency key, shop rules), **opt-in**
+  with `approvals.allow_decisions` and behind the new scope `b2b:approve`, offered on the consent
+  page as a separate checkbox never pre-ticked, with a warning.
+- **Audit log bridge** (with tmonier/sylius-audit-log-plugin ^1.0, `audit_log_bridge`): tool
+  calls (without arguments), consents and revocations mirrored as entries owned by the customer.
+
+### Changed
+
+- Default scopes (client asking for none): `b2b:read b2b:cart`; `scopes_supported` and the
+  `WWW-Authenticate` scope hint list `b2b:approve` only when decisions are enabled.
+
 ## 1.0.0 (2026-10-12)
 
 ### Added

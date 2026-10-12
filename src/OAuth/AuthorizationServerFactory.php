@@ -28,7 +28,7 @@ final class AuthorizationServerFactory
         string $authCodeTtl,
     ): AuthorizationServer {
         $server = new AuthorizationServer($clientRepository, $accessTokenRepository, $scopeRepository, new NullCryptKey(), $encryptionKey);
-        $server->setDefaultScope(implode(' ', Scopes::ALL));
+        $server->setDefaultScope(implode(' ', Scopes::DEFAULT));
 
         $accessTtl = new \DateInterval($accessTokenTtl);
         $refreshTtl = new \DateInterval($refreshTokenTtl);

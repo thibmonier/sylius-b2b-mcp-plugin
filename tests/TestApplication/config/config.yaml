@@ -4,11 +4,16 @@ imports:
     - { resource: "@TmonierSyliusQuickOrderPlugin/config/config.yaml" }
     - { resource: "@TmonierSyliusQuoteRequestPlugin/config/config.yaml" }
     - { resource: "@TmonierSyliusCompanyAccountsPlugin/config/config.yaml" }
+    - { resource: "@TmonierSyliusPurchaseApprovalPlugin/config/config.yaml" }
+    - { resource: "@TmonierSyliusAuditLogPlugin/config/config.yaml" }
     - { resource: "@TmonierSyliusB2bMcpPlugin/config/config.yaml" }
     - { resource: "dbal_savepoints.php" }
     - { resource: "services.php" }
 
 tmonier_sylius_b2b_mcp:
+    # Opt-in, enabled here to test and demo decide_approval.
+    approvals:
+        allow_decisions: true
     rate_limit:
         cache_pool: cache.tmonier_b2b_mcp_limiter
     oauth:
@@ -44,6 +49,10 @@ sylius_fixtures:
                         orders_per_member: 2
                 tmonier_trade_credit:
                     priority: -100
+                tmonier_purchase_approval:
+                    priority: -95
+                    options:
+                        pending_orders: 3
                 tmonier_quote_request:
                     priority: -120
                     options:

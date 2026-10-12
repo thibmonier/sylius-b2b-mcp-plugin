@@ -8,18 +8,20 @@ use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
 use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Entity\ScopeEntity;
-use Tmonier\SyliusB2bMcpPlugin\OAuth\Scopes;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\ScopeCatalog;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
 
 final class ScopeRepository implements ScopeRepositoryInterface
 {
-    public function __construct(private readonly TokenStore $store)
-    {
+    public function __construct(
+        private readonly TokenStore $store,
+        private readonly ScopeCatalog $catalog,
+    ) {
     }
 
     public function getScopeEntityByIdentifier(string $identifier): ?ScopeEntityInterface
     {
-        return '' !== $identifier && \in_array($identifier, Scopes::ALL, true) ? new ScopeEntity($identifier) : null;
+        return '' !== $identifier && $this->catalog->isSupported($identifier) ? new ScopeEntity($identifier) : null;
     }
 
     /** Never more than what the customer approved on the connection (also after a refresh). */

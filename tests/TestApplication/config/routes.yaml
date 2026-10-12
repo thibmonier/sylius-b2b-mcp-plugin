@@ -15,3 +15,9 @@ tmonier_sylius_quote_request:
 
 tmonier_sylius_company_accounts:
     resource: "@TmonierSyliusCompanyAccountsPlugin/config/routes.yaml"
+
+tmonier_sylius_purchase_approval:
+    resource: "@TmonierSyliusPurchaseApprovalPlugin/config/routes.yaml"
+
+tmonier_sylius_audit_log:
+    resource: "@TmonierSyliusAuditLogPlugin/config/routes.yaml"

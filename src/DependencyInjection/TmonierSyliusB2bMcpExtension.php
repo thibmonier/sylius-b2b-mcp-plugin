@@ -23,11 +23,16 @@ final class TmonierSyliusB2bMcpExtension extends AbstractResourceExtension imple
         'Tmonier\SyliusQuoteRequestPlugin\TmonierSyliusQuoteRequestPlugin' => 'services/quote_request.php',
         'Tmonier\SyliusTradeCreditPlugin\TmonierSyliusTradeCreditPlugin' => 'services/trade_credit.php',
         'Tmonier\SyliusCompanyAccountsPlugin\TmonierSyliusCompanyAccountsPlugin' => 'services/company_accounts.php',
+        self::PURCHASE_APPROVAL_BUNDLE => 'services/purchase_approval.php',
     ];
+
+    public const PURCHASE_APPROVAL_BUNDLE = 'Tmonier\SyliusPurchaseApprovalPlugin\TmonierSyliusPurchaseApprovalPlugin';
+
+    public const AUDIT_LOG_BUNDLE = 'Tmonier\SyliusAuditLogPlugin\TmonierSyliusAuditLogPlugin';
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{endpoint_path: string|null, hidden_official_tools: list<string>, oauth: array{encryption_key: string, access_token_ttl: string, refresh_token_ttl: string, auth_code_ttl: string, dynamic_client_registration: bool, redirect_uris: list<string>, allow_loopback_redirect_uris: bool}, max_page_size: int, idempotency_ttl_hours: int, audit_retention_days: int, driver: string, resources: array<string, mixed>} $config */
+        /** @var array{endpoint_path: string|null, hidden_official_tools: list<string>, oauth: array{encryption_key: string, access_token_ttl: string, refresh_token_ttl: string, auth_code_ttl: string, dynamic_client_registration: bool, redirect_uris: list<string>, allow_loopback_redirect_uris: bool}, approvals: array{allow_decisions: bool}, audit_log_bridge: bool, max_page_size: int, idempotency_ttl_hours: int, audit_retention_days: int, driver: string, resources: array<string, mixed>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         $this->registerResources('tmonier_b2b_mcp', $config['driver'], $config['resources'], $container);
@@ -44,17 +49,27 @@ final class TmonierSyliusB2bMcpExtension extends AbstractResourceExtension imple
         $container->setParameter('tmonier_b2b_mcp.idempotency_ttl_hours', $config['idempotency_ttl_hours']);
         $container->setParameter('tmonier_b2b_mcp.audit_retention_days', $config['audit_retention_days']);
 
+        /** @var array<string, class-string> $bundles */
+        $bundles = $container->getParameter('kernel.bundles');
+        $decisions = $config['approvals']['allow_decisions'] && \in_array(self::PURCHASE_APPROVAL_BUNDLE, $bundles, true);
+        $container->setParameter('tmonier_b2b_mcp.approvals.decisions_enabled', $decisions);
+
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/../../config'));
         $loader->load('services.php');
 
-        /** @var array<string, class-string> $bundles */
-        $bundles = $container->getParameter('kernel.bundles');
         $enabled = [];
         foreach (self::OPTIONAL_TOOLS as $bundle => $file) {
             if (\in_array($bundle, $bundles, true)) {
                 $loader->load($file);
                 $enabled[] = $bundle;
             }
+        }
+        if ($decisions) {
+            $loader->load('services/purchase_approval_decisions.php');
+        }
+        if ($config['audit_log_bridge'] && \in_array(self::AUDIT_LOG_BUNDLE, $bundles, true)) {
+            $loader->load('services/audit_log.php');
+            $enabled[] = self::AUDIT_LOG_BUNDLE;
         }
         $container->setParameter('tmonier_b2b_mcp.enabled_integrations', $enabled);
     }

@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Authenticator\Token\PostAuthenticationToken;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\McpEndpoint;
-use Tmonier\SyliusB2bMcpPlugin\OAuth\Scopes;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\ScopeCatalog;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
 use Tmonier\SyliusB2bMcpPlugin\RateLimit\RateLimiter;
 
@@ -45,6 +45,7 @@ final class McpAuthenticationListener
         private readonly EntityManagerInterface $entityManager,
         private readonly RateLimiter $rateLimiter,
         private readonly TokenStorageInterface $tokenStorage,
+        private readonly ScopeCatalog $scopeCatalog,
     ) {
     }
 
@@ -135,7 +136,7 @@ final class McpAuthenticationListener
 
     private function unauthorized(Request $request, ?string $error): Response
     {
-        $challenge = \sprintf('Bearer resource_metadata="%s", scope="%s"', $this->endpoint->getResourceMetadataUrl($request), implode(' ', Scopes::ALL));
+        $challenge = \sprintf('Bearer resource_metadata="%s", scope="%s"', $this->endpoint->getResourceMetadataUrl($request), implode(' ', $this->scopeCatalog->supported()));
         if (null !== $error) {
             $challenge .= \sprintf(', error="%s", error_description="The access token is invalid, expired or revoked."', $error);
         }

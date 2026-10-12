@@ -82,7 +82,7 @@ trait B2bMcpTestTrait
      *
      * @param-out ConnectionInterface $connection
      */
-    private function accessToken(CustomerInterface $customer, array $scopes = Scopes::ALL, ?string $channelCode = null, mixed &$connection = null): string
+    private function accessToken(CustomerInterface $customer, array $scopes = Scopes::DEFAULT, ?string $channelCode = null, mixed &$connection = null): string
     {
         $customer = $this->managed($customer);
         $this->entityManager()->flush();

@@ -8,11 +8,13 @@ use Mcp\Capability\Tool\NameValidator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Tmonier\SyliusB2bMcpPlugin\Mcp\B2bToolInterface;
+use Tmonier\SyliusB2bMcpPlugin\Mcp\Tool\DecideApprovalTool;
 use Tmonier\SyliusB2bMcpPlugin\Mcp\Tool\GetCheckoutLinkTool;
 use Tmonier\SyliusB2bMcpPlugin\Mcp\Tool\GetOrderTool;
 use Tmonier\SyliusB2bMcpPlugin\Mcp\Tool\GetTradeCreditStatementTool;
 use Tmonier\SyliusB2bMcpPlugin\Mcp\Tool\ListMyOrdersTool;
 use Tmonier\SyliusB2bMcpPlugin\Mcp\Tool\ListMyQuotesTool;
+use Tmonier\SyliusB2bMcpPlugin\Mcp\Tool\ListPendingApprovalsTool;
 use Tmonier\SyliusB2bMcpPlugin\Mcp\Tool\QuickOrderAddTool;
 use Tmonier\SyliusB2bMcpPlugin\Mcp\Tool\ReorderTool;
 use Tmonier\SyliusB2bMcpPlugin\Mcp\Tool\RequestQuoteTool;
@@ -23,7 +25,7 @@ final class ToolDefinitionsTest extends TestCase
     /** @return iterable<string, array{class-string<B2bToolInterface>}> */
     public static function tools(): iterable
     {
-        foreach ([ListMyOrdersTool::class, GetOrderTool::class, ReorderTool::class, GetCheckoutLinkTool::class, QuickOrderAddTool::class, RequestQuoteTool::class, ListMyQuotesTool::class, GetTradeCreditStatementTool::class] as $class) {
+        foreach ([ListMyOrdersTool::class, GetOrderTool::class, ReorderTool::class, GetCheckoutLinkTool::class, QuickOrderAddTool::class, RequestQuoteTool::class, ListMyQuotesTool::class, GetTradeCreditStatementTool::class, ListPendingApprovalsTool::class, DecideApprovalTool::class] as $class) {
             yield $class::getDefinition()->name => [$class];
         }
     }
@@ -60,10 +62,17 @@ final class ToolDefinitionsTest extends TestCase
     {
         $tool = $class::getDefinition();
         $changesTheCart = \in_array($tool->name, ['reorder', 'quick_order_add', 'request_quote'], true);
+        $decides = 'decide_approval' === $tool->name;
 
         $annotations = $tool->annotations;
         self::assertNotNull($annotations);
-        self::assertSame(!$changesTheCart, $annotations->readOnlyHint);
+        self::assertSame(!$changesTheCart && !$decides, $annotations->readOnlyHint);
+        if ($decides) {
+            // Cancels the order when rejecting: destructive, and only on an explicit request.
+            self::assertTrue($annotations->destructiveHint);
+            self::assertStringContainsString('ONLY when the user explicitly asks', (string) $tool->description);
+            self::assertArrayHasKey('idempotency_key', (array) $tool->inputSchema['properties']);
+        }
         if ($changesTheCart) {
             self::assertFalse($annotations->destructiveHint);
             self::assertArrayHasKey('idempotency_key', (array) $tool->inputSchema['properties']);

@@ -27,9 +27,11 @@ tmonier_b2b_mcp:
         authorize_redirect: "Dopo la tua decisione tornerai su %host%."
         authorize_unverified: "L'assistente si è registrato da solo il %date% con il nome «%client%», che il negozio non ha verificato. Continua solo se hai avviato tu questo collegamento dal tuo assistente e se l'indirizzo qui sopra è quello del tuo assistente."
         authorize_permissions: "Potrà:"
+        authorize_approve_warning: "L'assistente potrà approvare o rifiutare ordini a tuo nome, entro il tuo limite di approvazione. Deve farlo solo quando glielo chiedi esplicitamente nella conversazione: verifica ogni decisione che propone e mantieni attiva la conferma degli strumenti nel tuo assistente."
         authorize_never: "Non potrà mai effettuare né pagare un ordine, né modificare il tuo account, i tuoi indirizzi o i tuoi metodi di pagamento. Puoi scollegarlo in qualsiasi momento dal tuo account."
         approve: "Consenti"
         deny: "Nega"
     scope:
         b2b_read: "Leggere i tuoi ordini, preventivi ed estratto conto del credito, e ottenere il link al carrello"
         b2b_cart: "Aggiungere prodotti al carrello e inviare richieste di preventivo"
+        b2b_approve: "Approvare o rifiutare, a tuo nome, gli ordini della tua azienda in attesa della tua approvazione"

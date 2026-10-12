@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tmonier\SyliusB2bMcpPlugin\Controller\Shop;
 
 use League\OAuth2\Server\AuthorizationServer;
+use League\OAuth2\Server\Entities\ScopeEntityInterface;
 use League\OAuth2\Server\Exception\OAuthServerException;
 use League\OAuth2\Server\RequestTypes\AuthorizationRequestInterface;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
@@ -63,6 +64,14 @@ final class ConsentController
         if ($request->isMethod('POST')) {
             if (!$this->csrfTokenManager->isTokenValid(new CsrfToken(self::CSRF_TOKEN_ID, (string) $request->request->get('_csrf_token')))) {
                 throw new AccessDeniedHttpException('Invalid CSRF token.');
+            }
+
+            // b2b:approve is granted only when the customer ticked it on the page.
+            if ('1' !== $request->request->get('grant_approve')) {
+                $authorizationRequest->setScopes(array_values(array_filter(
+                    $authorizationRequest->getScopes(),
+                    static fn (ScopeEntityInterface $scope): bool => Scopes::APPROVE !== $scope->getIdentifier(),
+                )));
             }
 
             return $this->complete($authorizationRequest, $customer, 'approve' === $request->request->get('decision'));

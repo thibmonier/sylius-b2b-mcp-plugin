@@ -27,9 +27,11 @@ tmonier_b2b_mcp:
         authorize_redirect: "After your decision you are sent back to %host%."
         authorize_unverified: "The assistant registered itself on %date% under the name “%client%”, which the shop has not verified. Continue only if you started this connection yourself from your assistant and the address above is the one of your assistant."
         authorize_permissions: "It will be able to:"
+        authorize_approve_warning: "The assistant will be able to approve or reject purchase orders in your name, within your approval limit. It should only do so when you ask it explicitly in the conversation: check each decision it proposes, and keep tool confirmations on in your assistant."
         authorize_never: "It can never place or pay an order, nor change your account, addresses or payment methods. You can disconnect it at any time from your account."
         approve: "Allow"
         deny: "Deny"
     scope:
         b2b_read: "Read your orders, quotes and trade credit statement, and get the link to your cart"
         b2b_cart: "Add products to your cart and send quote requests"
+        b2b_approve: "Approve or reject, in your name, the purchase orders of your company waiting for your approval"

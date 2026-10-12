@@ -21,16 +21,28 @@
 
                         <h2 class="h6 mt-4">{{ 'tmonier_b2b_mcp.ui.authorize_permissions'|trans }}</h2>
                         <ul {{ sylius_test_html_attribute('tmonier-b2b-mcp-scopes') }}>
-                            {% for scope in scopes %}
+                            {% for scope in scopes|filter(scope => scope != 'b2b:approve') %}
                                 <li>{{ ('tmonier_b2b_mcp.scope.' ~ scope|replace({':': '_'}))|trans }}</li>
                             {% endfor %}
                         </ul>
                         <div class="alert alert-light small">{{ 'tmonier_b2b_mcp.ui.authorize_never'|trans }}</div>
 
-                        <form method="post" class="d-flex gap-2 justify-content-end mt-4">
+                        <form method="post" class="mt-4">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token('tmonier_b2b_mcp_consent') }}">
-                            <button type="submit" name="decision" value="deny" class="btn btn-outline-secondary" {{ sylius_test_html_attribute('tmonier-b2b-mcp-deny') }}>{{ 'tmonier_b2b_mcp.ui.deny'|trans }}</button>
-                            <button type="submit" name="decision" value="approve" class="btn btn-primary" {{ sylius_test_html_attribute('tmonier-b2b-mcp-approve') }}>{{ 'tmonier_b2b_mcp.ui.approve'|trans }}</button>
+                            {# Approval decisions: only when the customer ticks it (never pre-ticked). #}
+                            {% if 'b2b:approve' in scopes %}
+                                <div class="alert alert-warning small" {{ sylius_test_html_attribute('tmonier-b2b-mcp-approve-warning') }}>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="grant_approve" value="1" id="tmonier-b2b-mcp-grant-approve" {{ sylius_test_html_attribute('tmonier-b2b-mcp-grant-approve') }}>
+                                        <label class="form-check-label fw-semibold" for="tmonier-b2b-mcp-grant-approve">{{ 'tmonier_b2b_mcp.scope.b2b_approve'|trans }}</label>
+                                    </div>
+                                    <div class="mt-2">{{ 'tmonier_b2b_mcp.ui.authorize_approve_warning'|trans }}</div>
+                                </div>
+                            {% endif %}
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button type="submit" name="decision" value="deny" class="btn btn-outline-secondary" {{ sylius_test_html_attribute('tmonier-b2b-mcp-deny') }}>{{ 'tmonier_b2b_mcp.ui.deny'|trans }}</button>
+                                <button type="submit" name="decision" value="approve" class="btn btn-primary" {{ sylius_test_html_attribute('tmonier-b2b-mcp-approve') }}>{{ 'tmonier_b2b_mcp.ui.approve'|trans }}</button>
+                            </div>
                         </form>
                     </div>
                 </div>

@@ -27,9 +27,11 @@ tmonier_b2b_mcp:
         authorize_redirect: "Na uw beslissing wordt u teruggestuurd naar %host%."
         authorize_unverified: "De assistent heeft zichzelf op %date% geregistreerd onder de naam „%client%”, die de winkel niet heeft gecontroleerd. Ga alleen verder als u deze verbinding zelf vanuit uw assistent hebt gestart en het adres hierboven dat van uw assistent is."
         authorize_permissions: "De assistent kan:"
+        authorize_approve_warning: "De assistent kan namens u bestellingen goedkeuren of afwijzen, binnen uw goedkeuringslimiet. Dat mag hij alleen doen als u er in het gesprek uitdrukkelijk om vraagt: controleer elke beslissing die hij voorstelt en laat de bevestiging van tools in uw assistent ingeschakeld."
         authorize_never: "De assistent kan nooit een bestelling plaatsen of betalen, en uw account, adressen of betaalmiddelen niet wijzigen. U kunt hem altijd loskoppelen via uw account."
         approve: "Toestaan"
         deny: "Weigeren"
     scope:
         b2b_read: "Uw bestellingen, offertes en kredietoverzicht lezen en de link naar uw winkelwagen ophalen"
         b2b_cart: "Producten aan uw winkelwagen toevoegen en offerteaanvragen versturen"
+        b2b_approve: "Namens u de bestellingen van uw bedrijf die op uw goedkeuring wachten goedkeuren of afwijzen"

@@ -20,6 +20,7 @@ final class ToolCallLogger
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly LoggerInterface $logger,
+        private readonly AuditMirrorInterface $mirror = new NullAuditMirror(),
     ) {
     }
 
@@ -41,7 +42,7 @@ final class ToolCallLogger
             if (!$this->entityManager->isOpen()) {
                 throw new \RuntimeException('The entity manager is closed.');
             }
-            $this->entityManager->persist(new ToolCall(
+            $call = new ToolCall(
                 $connection?->connection,
                 $connection?->customer->getEmail(),
                 $connection?->connection->getClient()?->getName(),
@@ -52,8 +53,10 @@ final class ToolCallLogger
                 null === $message ? null : mb_substr($message, 0, 255),
                 $durationMs,
                 $ipAddress,
-            ));
+            );
+            $this->entityManager->persist($call);
             $this->entityManager->flush();
+            $this->mirror->toolCalled($call);
         } catch (\Throwable $exception) {
             // The audit log never breaks a tool call; the application log keeps the trace.
             $this->logger->error('Could not record the MCP tool call.', ['tool' => $tool, 'outcome' => $outcome, 'exception' => $exception]);

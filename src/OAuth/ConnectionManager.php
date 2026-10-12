@@ -7,6 +7,8 @@ namespace Tmonier\SyliusB2bMcpPlugin\OAuth;
 use Doctrine\ORM\EntityManagerInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Resource\Factory\FactoryInterface;
+use Tmonier\SyliusB2bMcpPlugin\Audit\AuditMirrorInterface;
+use Tmonier\SyliusB2bMcpPlugin\Audit\NullAuditMirror;
 use Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface;
 use Tmonier\SyliusB2bMcpPlugin\Entity\OAuthClient;
 use Tmonier\SyliusB2bMcpPlugin\Repository\ConnectionRepository;
@@ -20,6 +22,7 @@ final class ConnectionManager
         private readonly FactoryInterface $connectionFactory,
         private readonly EntityManagerInterface $entityManager,
         private readonly TokenStore $tokenStore,
+        private readonly AuditMirrorInterface $mirror = new NullAuditMirror(),
     ) {
     }
 
@@ -40,12 +43,15 @@ final class ConnectionManager
             $connection->setChannelCode($channelCode);
             $this->entityManager->persist($connection);
         }
-        $previous = $connection->getScopes();
+        $previous = null === $connection->getId() ? [] : $connection->getScopes();
         $connection->setScopes(Scopes::normalize($scopes));
         $this->entityManager->flush();
         // Fewer permissions than before: the tokens issued with the old ones stop at once.
         if ([] !== array_diff($previous, $connection->getScopes())) {
             $this->tokenStore->revokeAllForConnection($connection);
+        }
+        if ($previous !== $connection->getScopes()) {
+            $this->mirror->connectionApproved($connection, $previous);
         }
 
         return $connection;
@@ -56,5 +62,6 @@ final class ConnectionManager
         $connection->revoke($this->tokenStore->now());
         $this->entityManager->flush();
         $this->tokenStore->revokeAllForConnection($connection);
+        $this->mirror->connectionRevoked($connection);
     }
 }

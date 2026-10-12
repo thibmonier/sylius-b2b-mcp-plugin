@@ -31,7 +31,7 @@ final class OAuthFlowTest extends WebTestCase
         $this->client->request('POST', '/_mcp', [], [], ['CONTENT_TYPE' => 'application/json'], '{"jsonrpc":"2.0","id":1,"method":"tools/list"}');
 
         self::assertResponseStatusCodeSame(401);
-        self::assertSame('Bearer resource_metadata="http://localhost/.well-known/oauth-protected-resource/_mcp", scope="b2b:read b2b:cart"', $this->client->getResponse()->headers->get('WWW-Authenticate'));
+        self::assertSame('Bearer resource_metadata="http://localhost/.well-known/oauth-protected-resource/_mcp", scope="b2b:read b2b:cart b2b:approve"', $this->client->getResponse()->headers->get('WWW-Authenticate'));
 
         $this->client->request('POST', '/_mcp', [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_AUTHORIZATION' => 'Bearer ' . str_repeat('a', 80)], '{}');
 
@@ -71,7 +71,8 @@ final class OAuthFlowTest extends WebTestCase
         $resource = $this->json();
         self::assertSame('http://localhost/_mcp', $resource['resource']);
         self::assertSame(['http://localhost'], $resource['authorization_servers']);
-        self::assertSame(['b2b:read', 'b2b:cart'], $resource['scopes_supported']);
+        // b2b:approve is listed because the test application enables approval decisions.
+        self::assertSame(['b2b:read', 'b2b:cart', 'b2b:approve'], $resource['scopes_supported']);
 
         $this->client->request('GET', '/.well-known/oauth-protected-resource/other');
         self::assertResponseStatusCodeSame(404);
@@ -317,6 +318,42 @@ final class OAuthFlowTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertCount(0, $crawler->filter('[data-test-tmonier-b2b-mcp-unverified]'));
+    }
+
+    public function testTheApprovalPermissionIsGrantedOnlyWhenTheCustomerTicksIt(): void
+    {
+        $customer = $this->customer();
+        $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
+        $this->loginShop($customer);
+
+        foreach ([false => ['b2b:read', 'b2b:cart'], true => ['b2b:read', 'b2b:cart', 'b2b:approve']] as $tick => $expected) {
+            [, $challenge] = self::pkce();
+            $query = ['scope' => 'b2b:read b2b:cart b2b:approve'] + $this->authorizeQuery($clientId, $challenge);
+            $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($query));
+            self::assertCount(1, $crawler->filter('[data-test-tmonier-b2b-mcp-approve-warning]'));
+            $checkbox = $crawler->filter('[data-test-tmonier-b2b-mcp-grant-approve]');
+            self::assertNull($checkbox->attr('checked'), 'Never pre-ticked.');
+            $form = $crawler->filter('[data-test-tmonier-b2b-mcp-approve]')->form();
+            if ((bool) $tick) {
+                $field = $form['grant_approve'];
+                self::assertInstanceOf(\Symfony\Component\DomCrawler\Field\ChoiceFormField::class, $field);
+                $field->tick();
+            }
+            $this->client->submit($form);
+            self::assertStringStartsWith(self::REDIRECT_URI . '?', (string) $this->client->getResponse()->headers->get('Location'));
+
+            $scopes = $this->sqlValue('SELECT scopes FROM tmonier_b2b_mcp_connection WHERE customer_id = ? AND revoked_at IS NULL', [$customer->getId()]);
+            self::assertIsString($scopes);
+            self::assertSame($expected, json_decode($scopes, true));
+        }
+
+        // A client asking for no scope gets the default ones: never b2b:approve.
+        [, $challenge] = self::pkce();
+        $query = $this->authorizeQuery($clientId, $challenge);
+        unset($query['scope']);
+        $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($query));
+        self::assertCount(0, $crawler->filter('[data-test-tmonier-b2b-mcp-approve-warning]'));
+        self::assertCount(2, $crawler->filter('[data-test-tmonier-b2b-mcp-scopes] li'));
     }
 
     public function testDenyingSendsAccessDeniedBack(): void

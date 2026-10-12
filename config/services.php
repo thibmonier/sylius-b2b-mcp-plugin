@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use League\OAuth2\Server\AuthorizationServer;
+use Tmonier\SyliusB2bMcpPlugin\Audit\NullAuditMirror;
 use Tmonier\SyliusB2bMcpPlugin\Audit\ToolCallLogger;
 use Tmonier\SyliusB2bMcpPlugin\Cart\CartLinesAdderInterface;
 use Tmonier\SyliusB2bMcpPlugin\Cart\CartLockChecker;
@@ -38,6 +39,7 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\McpEndpoint;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\PsrBridge;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\RedirectUriPolicy;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\RefreshTokenDecoder;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\ScopeCatalog;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Repository\AccessTokenRepository;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Repository\AuthCodeRepository;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Repository\ClientRepository;
@@ -46,6 +48,7 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\Repository\ScopeRepository;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
 use Tmonier\SyliusB2bMcpPlugin\Order\CompanyOrdersInterface;
 use Tmonier\SyliusB2bMcpPlugin\Order\NullCompanyOrders;
+use Tmonier\SyliusB2bMcpPlugin\Order\NullOrderApprovalStatus;
 use Tmonier\SyliusB2bMcpPlugin\Order\OrderFinder;
 use Tmonier\SyliusB2bMcpPlugin\Order\OrderPresenter;
 use Tmonier\SyliusB2bMcpPlugin\Order\ShopUrlGenerator;
@@ -65,11 +68,13 @@ return static function (ContainerConfigurator $container): void {
         ->args([service('doctrine.orm.entity_manager'), service('clock'), param('tmonier_b2b_mcp.model.connection.class')]);
     $services->alias(TokenStore::class, 'tmonier_b2b_mcp.oauth.token_store');
 
+    $services->set('tmonier_b2b_mcp.oauth.scope_catalog', ScopeCatalog::class)->args([param('tmonier_b2b_mcp.approvals.decisions_enabled')]);
+
     $services->set('tmonier_b2b_mcp.oauth.client_repository', ClientRepository::class)->args([service('tmonier_b2b_mcp.oauth.token_store')]);
     $services->set('tmonier_b2b_mcp.oauth.access_token_repository', AccessTokenRepository::class)->args([service('tmonier_b2b_mcp.oauth.token_store')]);
     $services->set('tmonier_b2b_mcp.oauth.refresh_token_repository', RefreshTokenRepository::class)->args([service('tmonier_b2b_mcp.oauth.token_store')]);
     $services->set('tmonier_b2b_mcp.oauth.auth_code_repository', AuthCodeRepository::class)->args([service('tmonier_b2b_mcp.oauth.token_store')]);
-    $services->set('tmonier_b2b_mcp.oauth.scope_repository', ScopeRepository::class)->args([service('tmonier_b2b_mcp.oauth.token_store')]);
+    $services->set('tmonier_b2b_mcp.oauth.scope_repository', ScopeRepository::class)->args([service('tmonier_b2b_mcp.oauth.token_store'), service('tmonier_b2b_mcp.oauth.scope_catalog')]);
 
     $services->set('tmonier_b2b_mcp.oauth.authorization_server', AuthorizationServer::class)
         ->factory([AuthorizationServerFactory::class, 'create'])
@@ -101,6 +106,7 @@ return static function (ContainerConfigurator $container): void {
             service('tmonier_b2b_mcp.factory.connection'),
             service('doctrine.orm.entity_manager'),
             service('tmonier_b2b_mcp.oauth.token_store'),
+            service('tmonier_b2b_mcp.audit.mirror'),
         ]);
     $services->alias(ConnectionManager::class, 'tmonier_b2b_mcp.oauth.connection_manager')->public();
 
@@ -128,6 +134,7 @@ return static function (ContainerConfigurator $container): void {
             service('doctrine.orm.entity_manager'),
             service('tmonier_b2b_mcp.rate_limiter'),
             service('security.token_storage'),
+            service('tmonier_b2b_mcp.oauth.scope_catalog'),
         ])
         ->tag('kernel.event_listener', ['event' => 'kernel.request', 'method' => 'authenticate', 'priority' => 9])
         ->tag('kernel.event_listener', ['event' => 'kernel.request', 'method' => 'setSecurityToken', 'priority' => 7]);
@@ -139,7 +146,7 @@ return static function (ContainerConfigurator $container): void {
     $controllers = $services->defaults()->public()->tag('controller.service_arguments');
 
     $controllers->set('tmonier_b2b_mcp.controller.oauth.metadata', MetadataController::class)
-        ->args([service('tmonier_b2b_mcp.endpoint'), service('router'), param('tmonier_b2b_mcp.oauth.dynamic_client_registration')]);
+        ->args([service('tmonier_b2b_mcp.endpoint'), service('router'), param('tmonier_b2b_mcp.oauth.dynamic_client_registration'), service('tmonier_b2b_mcp.oauth.scope_catalog')]);
 
     $controllers->set('tmonier_b2b_mcp.controller.oauth.registration', RegistrationController::class)
         ->args([service('tmonier_b2b_mcp.oauth.client_registrar'), service('tmonier_b2b_mcp.rate_limiter'), param('tmonier_b2b_mcp.oauth.dynamic_client_registration')]);
@@ -209,8 +216,10 @@ return static function (ContainerConfigurator $container): void {
     $services->set('tmonier_b2b_mcp.idempotency_store', IdempotencyStore::class)
         ->args([service('doctrine.dbal.default_connection'), service('clock'), param('tmonier_b2b_mcp.idempotency_ttl_hours')]);
 
+    $services->set('tmonier_b2b_mcp.audit.mirror', NullAuditMirror::class);
+
     $services->set('tmonier_b2b_mcp.audit.tool_call_logger', ToolCallLogger::class)
-        ->args([service('doctrine.orm.entity_manager'), service('logger')])
+        ->args([service('doctrine.orm.entity_manager'), service('logger'), service('tmonier_b2b_mcp.audit.mirror')])
         ->tag('monolog.logger', ['channel' => 'mcp']);
 
     $services->set('tmonier_b2b_mcp.mcp.tool_runner', ToolRunner::class)
@@ -229,6 +238,8 @@ return static function (ContainerConfigurator $container): void {
     $services->alias(OrderFinder::class, 'tmonier_b2b_mcp.order.finder');
 
     $services->set('tmonier_b2b_mcp.order.presenter', OrderPresenter::class);
+
+    $services->set('tmonier_b2b_mcp.order.approval_status', NullOrderApprovalStatus::class);
     $services->alias(OrderPresenter::class, 'tmonier_b2b_mcp.order.presenter');
 
     $services->set('tmonier_b2b_mcp.order.shop_url_generator', ShopUrlGenerator::class)->args([service('router')]);
@@ -266,7 +277,7 @@ return static function (ContainerConfigurator $container): void {
         ]);
 
     $tools->set(GetOrderTool::class)
-        ->args([service('tmonier_b2b_mcp.mcp.tool_runner'), service('tmonier_b2b_mcp.order.finder'), service('tmonier_b2b_mcp.order.presenter')]);
+        ->args([service('tmonier_b2b_mcp.mcp.tool_runner'), service('tmonier_b2b_mcp.order.finder'), service('tmonier_b2b_mcp.order.presenter'), service('tmonier_b2b_mcp.order.approval_status')]);
 
     $tools->set(ReorderTool::class)
         ->args([

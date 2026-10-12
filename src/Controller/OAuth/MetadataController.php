@@ -10,7 +10,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\ClientRegistrar;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\McpEndpoint;
-use Tmonier\SyliusB2bMcpPlugin\OAuth\Scopes;
+use Tmonier\SyliusB2bMcpPlugin\OAuth\ScopeCatalog;
 
 /** RFC 9728 protected resource metadata and RFC 8414 authorization server metadata. */
 final class MetadataController
@@ -19,6 +19,7 @@ final class MetadataController
         private readonly McpEndpoint $endpoint,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly bool $dynamicClientRegistration,
+        private readonly ScopeCatalog $scopeCatalog,
     ) {
     }
 
@@ -31,7 +32,7 @@ final class MetadataController
         return $this->json([
             'resource' => $this->endpoint->getResourceUrl($request),
             'authorization_servers' => [$this->endpoint->getIssuer($request)],
-            'scopes_supported' => Scopes::ALL,
+            'scopes_supported' => $this->scopeCatalog->supported(),
             'bearer_methods_supported' => ['header'],
         ]);
     }
@@ -46,7 +47,7 @@ final class MetadataController
             'token_endpoint' => $url('tmonier_b2b_mcp_oauth_token'),
             'registration_endpoint' => $this->dynamicClientRegistration ? $url('tmonier_b2b_mcp_oauth_register') : null,
             'revocation_endpoint' => $url('tmonier_b2b_mcp_oauth_revoke'),
-            'scopes_supported' => Scopes::ALL,
+            'scopes_supported' => $this->scopeCatalog->supported(),
             'response_types_supported' => ['code'],
             'response_modes_supported' => ['query'],
             'grant_types_supported' => ['authorization_code', 'refresh_token'],
