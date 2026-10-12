@@ -21,6 +21,11 @@ final class RedirectUriPolicyTest extends TestCase
         yield 'ChatGPT, two segments' => ['https://chatgpt.com/connector/oauth/abc/def', false];
         yield 'ChatGPT, query' => ['https://chatgpt.com/connector/oauth/abc?x=1', false];
         yield 'ChatGPT, no segment' => ['https://chatgpt.com/connector/oauth/', false];
+        yield 'ChatGPT, dot-dot segment' => ['https://chatgpt.com/connector/oauth/..', false];
+        yield 'ChatGPT, dot segment' => ['https://chatgpt.com/connector/oauth/.', false];
+        yield 'ChatGPT, encoded dot-dot' => ['https://chatgpt.com/connector/oauth/%2e%2e', false];
+        yield 'ChatGPT, encoded slash' => ['https://chatgpt.com/connector/oauth/a%2Fb', false];
+        yield 'ChatGPT, id with dots' => ['https://chatgpt.com/connector/oauth/app.v2', true];
         yield 'suffix' => ['https://claude.ai/api/mcp/auth_callback/../evil', false];
         yield 'other host' => ['https://claude.ai.evil.example.com/api/mcp/auth_callback', false];
         yield 'http' => ['http://claude.ai/api/mcp/auth_callback', false];
@@ -43,6 +48,7 @@ final class RedirectUriPolicyTest extends TestCase
         self::assertTrue($policy->isAllowed('http://127.0.0.1:53682/callback'));
         self::assertFalse($policy->isAllowed('http://localhost.evil.example.com/callback'));
         self::assertFalse($policy->isAllowed('http://192.168.1.10:8080/callback'));
+        self::assertFalse($policy->isAllowed('http://localhost:6274/oauth/../callback'));
         self::assertFalse($policy->isAllowed('https://claude.ai/api/mcp/auth_callback'));
     }
 }

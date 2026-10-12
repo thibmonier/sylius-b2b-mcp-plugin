@@ -24,6 +24,11 @@ final class RedirectUriPolicy
             return false;
         }
 
+        // Dot segments ("/./", "/../"), also percent-encoded, would let the browser leave the allowed path.
+        if (1 === preg_match('#/\.{1,2}(/|$)|%2e|%2f|%5c#i', $uri)) {
+            return false;
+        }
+
         if ($this->allowLoopback && 1 === preg_match('#^http://(localhost|127\.0\.0\.1|\[::1\])(:\d{1,5})?(/[A-Za-z0-9._~/-]*)?$#', $uri)) {
             return true;
         }
@@ -31,7 +36,8 @@ final class RedirectUriPolicy
         foreach ($this->allowedUris as $allowed) {
             if (str_ends_with($allowed, '*')) {
                 $prefix = substr($allowed, 0, -1);
-                if (str_starts_with($uri, $prefix) && 1 === preg_match('/^[A-Za-z0-9._~-]+$/', substr($uri, \strlen($prefix)))) {
+                // One path segment, never "." nor ".." (resolved by the browser to another path).
+                if (str_starts_with($uri, $prefix) && 1 === preg_match('/^(?!\.{1,2}$)[A-Za-z0-9._~-]+$/', substr($uri, \strlen($prefix)))) {
                     return true;
                 }
 
