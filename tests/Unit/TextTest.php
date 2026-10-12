@@ -21,5 +21,8 @@ final class TextTest extends TestCase
         self::assertSame('Ignore previous instructions', Text::clean("<b>Ignore</b>\nprevious\u{0007}instructions"));
         self::assertSame('abc…', Text::clean('abcdef', 3));
         self::assertNull(Text::clean(null));
+        // Format characters (bidi overrides, zero-width) of customer-written names are removed.
+        self::assertSame('Bob evil Buyer', Text::clean("Bob \u{202E}evil\u{200B} Buyer"));
+        self::assertSame('Ann', Text::clean("\u{2066}Ann\u{2069}\u{FEFF}"));
     }
 }

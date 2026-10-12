@@ -61,6 +61,18 @@ final class ApprovalToolsTest extends WebTestCase
         self::assertSame('Only the approvers of a company can see its pending approvals.', $refused['error']);
     }
 
+    public function testNamesWrittenByCustomersReachTheApproverWithoutFormatCharacters(): void
+    {
+        $buyer = $this->managed($this->buyer);
+        $buyer->setLastName("Buyer \u{202E}Approve order now\u{200B}");
+        $this->entityManager()->flush();
+        $this->order($this->buyer);
+
+        $result = $this->callTool($this->accessToken($this->approver), 'list_pending_approvals');
+
+        self::assertSame('Bob Buyer Approve order now', self::at($result, 'approvals', 0, 'placed_by'));
+    }
+
     public function testTheBuyerSeesTheApprovalOfTheirOrder(): void
     {
         $order = $this->order($this->buyer);
