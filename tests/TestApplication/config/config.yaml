@@ -48,3 +48,10 @@ sylius_fixtures:
                     priority: -120
                     options:
                         amount: 4
+
+# Dev only (manual walkthrough with a local script, Claude Code or the MCP Inspector):
+# loopback redirect URIs such as http://127.0.0.1:8765/callback.
+when@dev:
+    tmonier_sylius_b2b_mcp:
+        oauth:
+            allow_loopback_redirect_uris: true
