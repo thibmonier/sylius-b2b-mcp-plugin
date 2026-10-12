@@ -56,7 +56,13 @@ No tool places an order, pays, or changes the account, the addresses or the paym
 
 ## Screenshots
 
-Screenshots go in `docs/images/` (none yet).
+![Consent page shown to the buyer when an assistant connects](docs/images/shop-ai-consent.jpg)
+
+![AI assistants connected to the customer account](docs/images/shop-ai-assistants.jpg)
+
+![AI assistant connections in the back office](docs/images/admin-ai-connections.jpg)
+
+![Audit log of the tool calls made by the assistants](docs/images/admin-ai-tool-calls.jpg)
 
 ## Requirements
 
