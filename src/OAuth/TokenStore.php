@@ -107,6 +107,21 @@ final class TokenStore
         return \is_int($deleted) ? $deleted : 0;
     }
 
+    /** Clients registered more than a week ago and never connected (abandoned dynamic registrations). */
+    public function purgeUnusedClients(): int
+    {
+        $deleted = $this->entityManager->createQueryBuilder()
+            ->delete(OAuthClient::class, 'c')
+            ->andWhere('c.createdAt < :limit')
+            ->andWhere(\sprintf('NOT EXISTS (SELECT 1 FROM %s connection WHERE connection.client = c)', $this->connectionClass))
+            ->setParameter('limit', $this->now()->modify('-7 days'), 'datetime_immutable')
+            ->getQuery()
+            ->execute()
+        ;
+
+        return \is_int($deleted) ? $deleted : 0;
+    }
+
     public function now(): \DateTimeImmutable
     {
         return $this->clock->now();

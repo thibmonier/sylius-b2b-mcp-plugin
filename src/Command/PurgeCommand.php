@@ -13,7 +13,7 @@ use Tmonier\SyliusB2bMcpPlugin\Idempotency\IdempotencyStore;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
 use Tmonier\SyliusB2bMcpPlugin\Repository\ToolCallRepository;
 
-#[AsCommand(name: 'tmonier:b2b-mcp:purge', description: 'Deletes expired OAuth tokens, old idempotency keys and audit log entries past the retention period.')]
+#[AsCommand(name: 'tmonier:b2b-mcp:purge', description: 'Deletes expired OAuth tokens, clients never connected, old idempotency keys and audit log entries past the retention period.')]
 final class PurgeCommand extends Command
 {
     public function __construct(
@@ -29,10 +29,11 @@ final class PurgeCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $tokens = $this->tokenStore->purgeExpired();
+        $clients = $this->tokenStore->purgeUnusedClients();
         $keys = $this->idempotencyStore->purge();
         $calls = $this->toolCallRepository->deleteOlderThan($this->clock->now()->modify(\sprintf('-%d days', $this->auditRetentionDays)));
 
-        $output->writeln(\sprintf('Deleted %d expired tokens, %d idempotency keys and %d audit log entries.', $tokens, $keys, $calls));
+        $output->writeln(\sprintf('Deleted %d expired tokens, %d unused clients, %d idempotency keys and %d audit log entries.', $tokens, $clients, $keys, $calls));
 
         return Command::SUCCESS;
     }

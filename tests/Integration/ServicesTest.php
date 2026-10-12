@@ -91,6 +91,9 @@ final class ServicesTest extends WebTestCase
         $this->connection()->executeStatement('INSERT INTO tmonier_b2b_mcp_idempotency (customer_id, tool, idempotency_key, request_hash, response, created_at) VALUES (?, ?, ?, ?, ?, ?)', [$customer->getId(), 'reorder', 'old-key-001', 'x', '{}', (new \DateTimeImmutable('-2 days'))->format('Y-m-d H:i:s')]);
         $this->connection()->executeStatement("INSERT INTO tmonier_b2b_mcp_tool_call (tool, arguments, outcome, duration_ms, created_at) VALUES ('get_order', '{}', 'success', 1, ?)", [(new \DateTimeImmutable('-100 days'))->format('Y-m-d H:i:s')]);
 
+        $this->connection()->executeStatement("INSERT INTO tmonier_b2b_mcp_client (identifier, name, redirect_uris, created_at) VALUES ('abandoned-client', 'Old', '[]', ?)", [(new \DateTimeImmutable('-8 days'))->format('Y-m-d H:i:s')]);
+        $this->connection()->executeStatement('UPDATE tmonier_b2b_mcp_client SET created_at = ? WHERE id = ?', [(new \DateTimeImmutable('-8 days'))->format('Y-m-d H:i:s'), $connection->getClient()?->getId()]);
+
         $tester = $this->command('tmonier:b2b-mcp:purge');
         $tester->execute([]);
 
@@ -98,6 +101,8 @@ final class ServicesTest extends WebTestCase
         self::assertSame(0, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_token WHERE identifier_hash = ?', [hash('sha256', 'expired-token-0000000000000000')]));
         self::assertSame(1, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_token WHERE connection_id = ?', [$connection->getId()]), 'Valid tokens stay.');
         self::assertSame(0, $this->sqlInt("SELECT COUNT(*) FROM tmonier_b2b_mcp_idempotency WHERE idempotency_key = 'old-key-001'"));
+        self::assertSame(0, $this->sqlInt("SELECT COUNT(*) FROM tmonier_b2b_mcp_client WHERE identifier = 'abandoned-client'"));
+        self::assertSame(1, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_client WHERE id = ?', [$connection->getClient()?->getId()]), 'Connected clients stay.');
         self::assertSame(0, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_tool_call WHERE created_at < ?', [(new \DateTimeImmutable('-90 days'))->format('Y-m-d H:i:s')]));
     }
 

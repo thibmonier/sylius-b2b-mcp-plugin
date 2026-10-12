@@ -72,6 +72,23 @@ final class OrderToolsTest extends WebTestCase
         self::assertSame($foreign['error'], str_replace('999999999', (string) $other->getNumber(), $unknown), 'Same answer for unknown and forbidden orders.');
     }
 
+    public function testOrdersOfAnotherChannelAndCartsAreNotVisible(): void
+    {
+        $customer = $this->customer();
+        $elsewhere = $this->order($customer);
+        $elsewhere->setChannel($this->otherChannel());
+        $token = $this->accessToken($customer);
+        $this->callTool($token, 'reorder', ['order_number' => (string) $this->order($customer)->getNumber(), 'idempotency_key' => 'fill-cart-01']);
+        $cart = $this->cartOf($customer);
+        self::assertNotNull($cart);
+        $cart->setNumber('CART-' . bin2hex(random_bytes(3)));
+        $this->entityManager()->flush();
+
+        self::assertArrayHasKey('error', $this->callTool($token, 'get_order', ['order_number' => (string) $elsewhere->getNumber()]));
+        self::assertArrayHasKey('error', $this->callTool($token, 'get_order', ['order_number' => (string) $cart->getNumber()]));
+        self::assertSame(1, $this->callTool($token, 'list_my_orders')['total']);
+    }
+
     public function testPagination(): void
     {
         $customer = $this->customer();
@@ -106,6 +123,8 @@ final class OrderToolsTest extends WebTestCase
         $this->mcpSessionId = null;
         $buyerToken = $this->accessToken($buyer);
         self::assertSame('Your company role does not give access to the company orders.', $this->callTool($buyerToken, 'list_my_orders', ['scope' => 'company'])['error']);
+        $adminOrder = $this->order($admin);
+        self::assertArrayHasKey('error', $this->callTool($buyerToken, 'get_order', ['order_number' => (string) $adminOrder->getNumber()]), 'A buyer does not see the orders of colleagues.');
 
         $this->mcpSessionId = null;
         $outsiderToken = $this->accessToken($this->customer('Eve', 'Other'));

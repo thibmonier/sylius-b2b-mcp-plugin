@@ -26,7 +26,7 @@ final class RevocationController
 
     public function __invoke(Request $request): Response
     {
-        $limited = $this->rateLimiter->consumeOAuthRequest($request->getClientIp());
+        $limited = $this->rateLimiter->consumeOAuthRequest($request->getClientIp(), $request->getUser() ?? $request->request->get('client_id'));
         if (null !== $limited) {
             return $limited;
         }

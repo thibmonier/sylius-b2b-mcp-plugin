@@ -128,6 +128,29 @@ final class PluginToolsTest extends WebTestCase
         self::assertSame('Add your first and last name to your shop account before requesting a quote.', $result['error']);
     }
 
+    public function testProductsNotSoldInTheChannelAreNotQuoted(): void
+    {
+        $variant = $this->variant();
+        $product = $variant->getProduct();
+        self::assertInstanceOf(\Sylius\Component\Core\Model\ProductInterface::class, $product);
+        $product->removeChannel($this->channel());
+        $this->entityManager()->flush();
+
+        $result = $this->callTool($this->accessToken($this->customer()), 'request_quote', ['source' => 'lines', 'lines' => [['sku' => (string) $variant->getCode(), 'quantity' => 1]], 'idempotency_key' => 'quote-elsewhere']);
+
+        self::assertSame('None of these products can be quoted on this shop.', $result['error']);
+    }
+
+    public function testQuotesOfAnotherChannelAreNotListed(): void
+    {
+        $token = $this->accessToken($this->customer());
+        $quote = $this->callTool($token, 'request_quote', ['source' => 'lines', 'lines' => [['sku' => (string) $this->variant()->getCode(), 'quantity' => 1]], 'idempotency_key' => 'quote-channel']);
+        $this->connection()->executeStatement('UPDATE tmonier_quote_request SET channel_id = ? WHERE number = ?', [$this->otherChannel()->getId(), self::stringAt($quote, 'number')]);
+        $this->entityManager()->clear();
+
+        self::assertSame(0, $this->callTool($token, 'list_my_quotes')['total']);
+    }
+
     public function testQuotesOfOtherCustomersAreNotListed(): void
     {
         $this->callTool($this->accessToken($this->customer()), 'request_quote', ['source' => 'lines', 'lines' => [['sku' => (string) $this->variant()->getCode(), 'quantity' => 1]], 'idempotency_key' => 'quote-other']);

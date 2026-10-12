@@ -31,7 +31,7 @@ final class OAuthFlowTest extends WebTestCase
         $this->client->request('POST', '/_mcp', [], [], ['CONTENT_TYPE' => 'application/json'], '{"jsonrpc":"2.0","id":1,"method":"tools/list"}');
 
         self::assertResponseStatusCodeSame(401);
-        self::assertSame('Bearer resource_metadata="http://localhost/.well-known/oauth-protected-resource/_mcp"', $this->client->getResponse()->headers->get('WWW-Authenticate'));
+        self::assertSame('Bearer resource_metadata="http://localhost/.well-known/oauth-protected-resource/_mcp", scope="b2b:read b2b:cart"', $this->client->getResponse()->headers->get('WWW-Authenticate'));
 
         $this->client->request('POST', '/_mcp', [], [], ['CONTENT_TYPE' => 'application/json', 'HTTP_AUTHORIZATION' => 'Bearer ' . str_repeat('a', 80)], '{}');
 
@@ -135,7 +135,7 @@ final class OAuthFlowTest extends WebTestCase
         $this->client->getCookieJar()->clear();
         $tools = $this->rpc($accessToken, 'tools/list');
         self::assertArrayHasKey('result', $tools);
-        self::assertNull($this->client->getResponse()->headers->get('Set-Cookie'), 'The MCP endpoint is stateless.');
+        self::assertSame([], $this->client->getCookieJar()->allRawValues('http://localhost/'), 'The MCP endpoint is stateless: no session.');
 
         // Refresh: a new pair, the old refresh token is spent.
         $refreshed = $this->token(['grant_type' => 'refresh_token', 'client_id' => $clientId, 'refresh_token' => $tokens['refresh_token']]);
@@ -165,6 +165,39 @@ final class OAuthFlowTest extends WebTestCase
 
         $this->post(self::stringAt($tokens, 'access_token'), ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list']);
         self::assertResponseStatusCodeSame(401);
+    }
+
+    public function testARefreshNeverExceedsWhatTheCustomerApprovesNow(): void
+    {
+        $customer = $this->customer();
+        $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
+        [$verifier, $challenge] = self::pkce();
+        $tokens = $this->token(['grant_type' => 'authorization_code', 'client_id' => $clientId, 'code' => $this->approve($customer, $clientId, $challenge), 'redirect_uri' => self::REDIRECT_URI, 'code_verifier' => $verifier]);
+
+        // The customer approves the assistant again, for reading only.
+        [, $challenge] = self::pkce();
+        $this->loginShop($customer);
+        $query = ['scope' => 'b2b:read'] + $this->authorizeQuery($clientId, $challenge);
+        $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($query));
+        $this->client->submit($crawler->filter('[data-test-tmonier-b2b-mcp-approve]')->form());
+        $this->client->getCookieJar()->clear();
+
+        $refreshed = $this->token(['grant_type' => 'refresh_token', 'client_id' => $clientId, 'refresh_token' => $tokens['refresh_token']]);
+        self::assertResponseIsSuccessful();
+        $result = $this->callTool(self::stringAt($refreshed, 'access_token'), 'reorder', ['order_number' => 'any', 'idempotency_key' => 'scope-after-refresh']);
+        self::assertStringContainsString('was not granted the "b2b:cart" permission', self::stringAt($result, 'error'));
+    }
+
+    public function testAClientWhoseRedirectUriIsNoLongerAllowedCannotAuthorize(): void
+    {
+        $this->connection()->executeStatement("INSERT INTO tmonier_b2b_mcp_client (identifier, name, redirect_uris, created_at) VALUES ('legacy-client', 'Legacy', '[\"https://legacy.example.com/callback\"]', ?)", [(new \DateTimeImmutable())->format('Y-m-d H:i:s')]);
+        [, $challenge] = self::pkce();
+        $query = ['client_id' => 'legacy-client', 'redirect_uri' => 'https://legacy.example.com/callback'] + $this->authorizeQuery('legacy-client', $challenge);
+
+        $this->client->request('GET', '/mcp-oauth/authorize?' . http_build_query($query));
+
+        self::assertResponseStatusCodeSame(400);
+        self::assertStringNotContainsString('legacy.example.com', (string) $this->client->getResponse()->headers->get('Location'));
     }
 
     public function testPkceWithS256IsRequired(): void
@@ -330,6 +363,17 @@ final class OAuthFlowTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(429);
         self::assertNotNull($this->client->getResponse()->headers->get('Retry-After'));
+    }
+
+    public function testRegistrationIsRateLimitedPerAddress(): void
+    {
+        $limiter = $this->client->getContainer()->get('limiter.tmonier_b2b_mcp_registration');
+        self::assertInstanceOf(\Symfony\Component\RateLimiter\RateLimiterFactory::class, $limiter);
+        $limiter->create('127.0.0.1')->consume(60);
+
+        $this->register(['redirect_uris' => [self::REDIRECT_URI]]);
+
+        self::assertResponseStatusCodeSame(429);
     }
 
     /** @return array{string, string} verifier and S256 challenge */

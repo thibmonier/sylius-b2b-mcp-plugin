@@ -264,6 +264,26 @@ trait B2bMcpTestTrait
         return $channel;
     }
 
+    /** A second channel of the shop (another host name). */
+    private function otherChannel(): ChannelInterface
+    {
+        $channel = $this->channel();
+        /** @var FactoryInterface<ChannelInterface> $factory */
+        $factory = $this->service('sylius.factory.channel');
+        $other = $factory->createNew();
+        $other->setCode('MCP_OTHER_' . strtoupper(bin2hex(random_bytes(3))));
+        $other->setName('Other channel');
+        $other->setHostname('other-' . bin2hex(random_bytes(3)) . '.example.com');
+        $other->setEnabled(true);
+        $other->setBaseCurrency($channel->getBaseCurrency());
+        $other->setDefaultLocale($channel->getDefaultLocale());
+        $other->setTaxCalculationStrategy('order_items_based');
+        $this->entityManager()->persist($other);
+        $this->entityManager()->flush();
+
+        return $other;
+    }
+
     private function localeCode(): string
     {
         return (string) $this->channel()->getDefaultLocale()?->getCode();

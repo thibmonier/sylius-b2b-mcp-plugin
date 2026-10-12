@@ -24,9 +24,15 @@ final class RateLimiter
         return $this->consume($this->mcpRequests, $key);
     }
 
-    public function consumeOAuthRequest(?string $ip): ?Response
+    /**
+     * Per client when the request names one (the assistants call the token endpoint for all their
+     * customers from a few server addresses), else per IP address.
+     */
+    public function consumeOAuthRequest(?string $ip, mixed $clientId = null): ?Response
     {
-        return $this->consume($this->oauthRequests, self::ipKey($ip));
+        $key = \is_string($clientId) && '' !== $clientId ? 'client-' . substr($clientId, 0, 64) : self::ipKey($ip);
+
+        return $this->consume($this->oauthRequests, $key);
     }
 
     public function consumeClientRegistration(?string $ip): ?Response
