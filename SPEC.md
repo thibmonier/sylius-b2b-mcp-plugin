@@ -80,7 +80,10 @@ resource indicator check (RFC 8707).
   scopes of the connection.
 - Access tokens 1 hour, refresh tokens 30 days (rotated, the spent one revoked), codes 10
   minutes. A spent code or refresh token presented again revokes every token of the connection
-  (OAuth 2.1 §4.1.2, refresh token reuse detection).
+  (OAuth 2.1 §4.1.2, refresh token reuse detection). Tokens revoked with their connection also
+  expire at once, so presenting them later is not taken for a replay.
+- A new consent that withdraws a scope revokes the tokens of the connection; the authenticator
+  also intersects the scopes of the token with those of the connection.
 - The MCP request needs `Authorization: Bearer`; the token must be usable (not expired, not
   revoked, connection active), the shop user enabled, the channel of the request the channel of
   the connection. Otherwise 401 (`invalid_token` when a token was sent).

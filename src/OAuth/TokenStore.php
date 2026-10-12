@@ -63,12 +63,17 @@ final class TokenStore
         $this->entityManager->flush();
     }
 
-    /** Revokes every token of a connection (replayed code or refresh token, revocation by the customer). */
+    /**
+     * Revokes every token of a connection (replayed code or refresh token, revocation by the
+     * customer, withdrawn permission). They also expire at once: a token revoked this way is not
+     * a spent one, so presenting it later is not taken for a replay (see isReplay()).
+     */
     public function revokeAllForConnection(ConnectionInterface $connection): void
     {
         $this->entityManager->createQueryBuilder()
             ->update(OAuthToken::class, 't')
             ->set('t.revokedAt', ':now')
+            ->set('t.expiresAt', ':now')
             ->andWhere('t.connection = :connection')
             ->andWhere('t.revokedAt IS NULL')
             ->setParameter('now', $this->now(), 'datetime_immutable')
@@ -76,6 +81,17 @@ final class TokenStore
             ->getQuery()
             ->execute()
         ;
+    }
+
+    /**
+     * A spent single-use token (rotated refresh token, redeemed code) presented again: it was
+     * revoked on its own while still valid. Tokens revoked with their whole connection are not.
+     */
+    public function isReplay(OAuthToken $token): bool
+    {
+        $revokedAt = $token->getRevokedAt();
+
+        return null !== $revokedAt && $token->getExpiresAt() > $revokedAt;
     }
 
     public function findConnection(?string $connectionId): ?ConnectionInterface

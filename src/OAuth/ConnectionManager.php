@@ -25,7 +25,8 @@ final class ConnectionManager
 
     /**
      * Approves the scopes for the assistant on the channel: the active connection is reused
-     * (its scopes replaced by the approved ones), or a new one is created.
+     * (its scopes replaced by the approved ones, its tokens revoked if a scope is withdrawn), or a
+     * new one is created.
      *
      * @param list<string> $scopes
      */
@@ -39,8 +40,13 @@ final class ConnectionManager
             $connection->setChannelCode($channelCode);
             $this->entityManager->persist($connection);
         }
+        $previous = $connection->getScopes();
         $connection->setScopes(Scopes::normalize($scopes));
         $this->entityManager->flush();
+        // Fewer permissions than before: the tokens issued with the old ones stop at once.
+        if ([] !== array_diff($previous, $connection->getScopes())) {
+            $this->tokenStore->revokeAllForConnection($connection);
+        }
 
         return $connection;
     }

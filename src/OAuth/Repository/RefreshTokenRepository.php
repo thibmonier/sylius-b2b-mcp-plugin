@@ -58,7 +58,9 @@ final class RefreshTokenRepository implements RefreshTokenRepositoryInterface
             return true;
         }
         if (null !== $token->getRevokedAt()) {
-            $this->store->revokeAllForConnection($token->getConnection());
+            if ($this->store->isReplay($token)) {
+                $this->store->revokeAllForConnection($token->getConnection());
+            }
 
             return true;
         }

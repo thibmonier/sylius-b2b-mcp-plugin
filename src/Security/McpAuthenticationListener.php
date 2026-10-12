@@ -117,7 +117,10 @@ final class McpAuthenticationListener
             return null;
         }
 
-        return new AuthenticatedConnection($connection, $user, $customer, $channel, $token->getScopes());
+        // Never more than the connection allows now (defence in depth: narrowing also revokes).
+        $scopes = array_values(array_intersect($token->getScopes(), $connection->getScopes()));
+
+        return new AuthenticatedConnection($connection, $user, $customer, $channel, $scopes);
     }
 
     private function touch(AuthenticatedConnection $connection): void

@@ -191,17 +191,58 @@ final class OAuthFlowTest extends WebTestCase
         $tokens = $this->token(['grant_type' => 'authorization_code', 'client_id' => $clientId, 'code' => $this->approve($customer, $clientId, $challenge), 'redirect_uri' => self::REDIRECT_URI, 'code_verifier' => $verifier]);
 
         // The customer approves the assistant again, for reading only.
-        [, $challenge] = self::pkce();
+        [$verifier, $challenge] = self::pkce();
         $this->loginShop($customer);
         $query = ['scope' => 'b2b:read'] + $this->authorizeQuery($clientId, $challenge);
         $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($query));
         $this->client->submit($crawler->filter('[data-test-tmonier-b2b-mcp-approve]')->form());
+        $code = $this->codeFromRedirect('xyz-state');
         $this->client->getCookieJar()->clear();
 
-        $refreshed = $this->token(['grant_type' => 'refresh_token', 'client_id' => $clientId, 'refresh_token' => $tokens['refresh_token']]);
+        // The tokens of the wider consent are revoked, refresh token included.
+        $this->token(['grant_type' => 'refresh_token', 'client_id' => $clientId, 'refresh_token' => $tokens['refresh_token']]);
+        self::assertResponseStatusCodeSame(400);
+
+        $narrowed = $this->token(['grant_type' => 'authorization_code', 'client_id' => $clientId, 'code' => $code, 'redirect_uri' => self::REDIRECT_URI, 'code_verifier' => $verifier]);
+        self::assertResponseIsSuccessful();
+        $refreshed = $this->token(['grant_type' => 'refresh_token', 'client_id' => $clientId, 'refresh_token' => $narrowed['refresh_token']]);
         self::assertResponseIsSuccessful();
         $result = $this->callTool(self::stringAt($refreshed, 'access_token'), 'reorder', ['order_number' => 'any', 'idempotency_key' => 'scope-after-refresh']);
         self::assertStringContainsString('was not granted the "b2b:cart" permission', self::stringAt($result, 'error'));
+    }
+
+    public function testWithdrawingAPermissionStopsTheTokensAlreadyIssued(): void
+    {
+        $customer = $this->customer();
+        $connection = null;
+        $token = $this->accessToken($customer, connection: $connection);
+        $manager = $this->service('tmonier_b2b_mcp.oauth.connection_manager');
+        self::assertInstanceOf(\Tmonier\SyliusB2bMcpPlugin\OAuth\ConnectionManager::class, $manager);
+        $client = $connection->getClient();
+        self::assertNotNull($client);
+
+        // Re-approving the same permissions keeps the tokens.
+        $manager->approve($this->managed($customer), $client, (string) $this->channel()->getCode(), ['b2b:read', 'b2b:cart']);
+        self::assertArrayHasKey('result', $this->rpc($token, 'tools/list'));
+
+        $manager->approve($this->managed($customer), $client, (string) $this->channel()->getCode(), ['b2b:read']);
+        $this->post($token, ['jsonrpc' => '2.0', 'id' => 9, 'method' => 'tools/list']);
+        self::assertResponseStatusCodeSame(401);
+    }
+
+    public function testATokenNeverGetsMoreThanItsConnectionAllows(): void
+    {
+        $customer = $this->customer();
+        $connection = null;
+        $token = $this->accessToken($customer, connection: $connection);
+        // Narrowed without revocation (e.g. by hand in the database): the scope check still applies.
+        $this->connection()->executeStatement('UPDATE tmonier_b2b_mcp_connection SET scopes = ? WHERE id = ?', ['["b2b:read"]', $connection->getId()]);
+        $this->entityManager()->refresh($connection);
+
+        $result = $this->callTool($token, 'quick_order_add', ['lines' => [['sku' => (string) $this->variant()->getCode(), 'quantity' => 1]], 'confirm' => true, 'idempotency_key' => 'narrowed-key-1']);
+
+        self::assertStringContainsString('was not granted the "b2b:cart" permission', self::stringAt($result, 'error'));
+        self::assertNull($this->cartOf($customer));
     }
 
     public function testAClientWhoseRedirectUriIsNoLongerAllowedCannotAuthorize(): void

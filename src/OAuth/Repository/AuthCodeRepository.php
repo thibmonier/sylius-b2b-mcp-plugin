@@ -52,7 +52,9 @@ final class AuthCodeRepository implements AuthCodeRepositoryInterface
             return true;
         }
         if (null !== $code->getRevokedAt()) {
-            $this->store->revokeAllForConnection($code->getConnection());
+            if ($this->store->isReplay($code)) {
+                $this->store->revokeAllForConnection($code->getConnection());
+            }
 
             return true;
         }
