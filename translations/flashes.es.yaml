@@ -1,0 +1,3 @@
+tmonier_b2b_mcp:
+    flash:
+        connection_revoked: "El asistente se ha desconectado."

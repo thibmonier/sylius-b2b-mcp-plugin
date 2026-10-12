@@ -1,0 +1,45 @@
+# OAuth 2.1 authorization server of the MCP endpoint (firewall "tmonier_b2b_mcp_oauth", no session).
+
+tmonier_b2b_mcp_oauth_protected_resource:
+    path: /.well-known/oauth-protected-resource
+    methods: [GET]
+    defaults:
+        _controller: tmonier_b2b_mcp.controller.oauth.metadata::protectedResource
+
+tmonier_b2b_mcp_oauth_protected_resource_path:
+    path: /.well-known/oauth-protected-resource/{resourcePath}
+    methods: [GET]
+    requirements:
+        resourcePath: .+
+    defaults:
+        _controller: tmonier_b2b_mcp.controller.oauth.metadata::protectedResource
+
+tmonier_b2b_mcp_oauth_authorization_server:
+    path: /.well-known/oauth-authorization-server
+    methods: [GET]
+    defaults:
+        _controller: tmonier_b2b_mcp.controller.oauth.metadata::authorizationServer
+
+tmonier_b2b_mcp_oauth_authorize:
+    path: /mcp-oauth/authorize
+    methods: [GET]
+    defaults:
+        _controller: tmonier_b2b_mcp.controller.oauth.authorize
+
+tmonier_b2b_mcp_oauth_token:
+    path: /mcp-oauth/token
+    methods: [POST]
+    defaults:
+        _controller: tmonier_b2b_mcp.controller.oauth.token
+
+tmonier_b2b_mcp_oauth_register:
+    path: /mcp-oauth/register
+    methods: [POST]
+    defaults:
+        _controller: tmonier_b2b_mcp.controller.oauth.registration
+
+tmonier_b2b_mcp_oauth_revoke:
+    path: /mcp-oauth/revoke
+    methods: [POST]
+    defaults:
+        _controller: tmonier_b2b_mcp.controller.oauth.revocation

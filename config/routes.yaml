@@ -1,0 +1,18 @@
+# Import this file from your application's config/routes (after the routes of
+# sylius/mcp-server-plugin):
+#
+# tmonier_sylius_b2b_mcp:
+#     resource: "@TmonierSyliusB2bMcpPlugin/config/routes.yaml"
+
+tmonier_b2b_mcp_oauth:
+    resource: "@TmonierSyliusB2bMcpPlugin/config/routes/oauth.yaml"
+
+tmonier_b2b_mcp_admin:
+    resource: "@TmonierSyliusB2bMcpPlugin/config/routes/admin.yaml"
+    prefix: '/%sylius_admin.path_name%'
+
+tmonier_b2b_mcp_shop:
+    resource: "@TmonierSyliusB2bMcpPlugin/config/routes/shop.yaml"
+    prefix: /{_locale}
+    requirements:
+        _locale: ^[A-Za-z]{2,4}(_([A-Za-z]{4}|[0-9]{3}))?(_([A-Za-z]{2}|[0-9]{3}))?$

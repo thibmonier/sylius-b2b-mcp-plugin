@@ -1,0 +1,65 @@
+{% extends '@SyliusShop/shared/layout/base.html.twig' %}
+{% from '@SyliusShop/shared/breadcrumbs.html.twig' import breadcrumbs %}
+
+{% block title %}{{ 'tmonier_b2b_mcp.ui.ai_assistants'|trans }} | {{ parent() }}{% endblock %}
+
+{% block content %}
+    <div class="container mb-auto">
+        <div class="row my-4">
+            <div class="col-12">
+                {{ breadcrumbs([
+                    { label: 'sylius.ui.home'|trans, path: path('sylius_shop_homepage') },
+                    { label: 'sylius.ui.my_account'|trans, path: path('sylius_shop_account_dashboard') },
+                    { label: 'tmonier_b2b_mcp.ui.ai_assistants'|trans, active: true },
+                ]) }}
+            </div>
+            <div class="col-12 col-md-3 mb-4 mb-md-0">
+                <div class="mb-3">{{ knp_menu_render('sylius_shop.account', {'template': '@SyliusShop/account/menu/content.html.twig'}) }}</div>
+            </div>
+            <div class="col-12 col-md-9">
+                {% include '@SyliusShop/shared/flashes.html.twig' %}
+                <div class="mb-4">
+                    <h1>{{ 'tmonier_b2b_mcp.ui.ai_assistants'|trans }}</h1>
+                    <div class="text-body-secondary">{{ 'tmonier_b2b_mcp.ui.ai_assistants_help'|trans }}</div>
+                </div>
+                {% if connections is empty %}
+                    <div class="alert alert-light" {{ sylius_test_html_attribute('tmonier-b2b-mcp-no-connection') }}>{{ 'tmonier_b2b_mcp.ui.no_connection'|trans }}</div>
+                {% else %}
+                    <div class="table-responsive">
+                        <table class="table align-middle" {{ sylius_test_html_attribute('tmonier-b2b-mcp-connections') }}>
+                            <thead>
+                                <tr>
+                                    <th>{{ 'tmonier_b2b_mcp.ui.assistant'|trans }}</th>
+                                    <th>{{ 'tmonier_b2b_mcp.ui.permissions'|trans }}</th>
+                                    <th>{{ 'tmonier_b2b_mcp.ui.connected_at'|trans }}</th>
+                                    <th>{{ 'tmonier_b2b_mcp.ui.last_used_at'|trans }}</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for connection in connections %}
+                                    <tr {{ sylius_test_html_attribute('tmonier-b2b-mcp-connection', connection.id) }}>
+                                        <td class="fw-semibold">{{ connection.client.name }}</td>
+                                        <td>
+                                            {% for scope in connection.scopes %}
+                                                <div class="small">{{ ('tmonier_b2b_mcp.scope.' ~ scope|replace({':': '_'}))|trans }}</div>
+                                            {% endfor %}
+                                        </td>
+                                        <td>{{ connection.createdAt|date('Y-m-d H:i') }}</td>
+                                        <td>{{ connection.lastUsedAt ? connection.lastUsedAt|date('Y-m-d H:i') : '-' }}</td>
+                                        <td class="text-end">
+                                            <form method="post" action="{{ path('tmonier_b2b_mcp_shop_connection_revoke', {'id': connection.id}) }}">
+                                                <input type="hidden" name="_csrf_token" value="{{ csrf_token('tmonier_b2b_mcp_revoke_' ~ connection.id) }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" {{ sylius_test_html_attribute('tmonier-b2b-mcp-revoke', connection.id) }}>{{ 'tmonier_b2b_mcp.ui.disconnect'|trans }}</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

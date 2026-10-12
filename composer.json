@@ -1,0 +1,109 @@
+{
+    "name": "tmonier/sylius-b2b-mcp-plugin",
+    "type": "sylius-plugin",
+    "description": "B2B tools for the official Sylius MCP server: signed-in buyers use Claude or ChatGPT to list and reorder their orders, quick order by SKU, request quotes and read their trade credit statement (OAuth 2.1 with PKCE, checkout handoff to the shop)",
+    "keywords": [
+        "sylius",
+        "sylius-plugin",
+        "b2b",
+        "mcp",
+        "model-context-protocol",
+        "oauth2",
+        "claude",
+        "chatgpt",
+        "reorder"
+    ],
+    "license": "MIT",
+    "require": {
+        "league/oauth2-server": "^9.2",
+        "mcp/sdk": "^0.3",
+        "nyholm/psr7": "^1.8",
+        "php": "^8.2",
+        "sylius/mcp-server-plugin": "^0.2",
+        "sylius/sylius": "^2.2.9 || ^2.3",
+        "symfony/clock": "^7.4 || ^8.0",
+        "symfony/psr-http-message-bridge": "^7.4 || ^8.0",
+        "symfony/rate-limiter": "^7.4 || ^8.0"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-doctrine": "^2.0",
+        "phpstan/phpstan-webmozart-assert": "^2.0",
+        "phpunit/phpunit": "^10.5",
+        "sylius-labs/coding-standard": "^4.4",
+        "sylius/test-application": "^2.0.0@alpha",
+        "symfony/browser-kit": "^7.4 || ^8.0",
+        "symfony/css-selector": "^7.4 || ^8.0",
+        "symfony/debug-bundle": "^7.4 || ^8.0",
+        "symfony/dom-crawler": "^7.4 || ^8.0",
+        "symfony/dotenv": "^7.4 || ^8.0",
+        "symfony/http-client": "^7.4 || ^8.0",
+        "symfony/intl": "^7.4 || ^8.0",
+        "symfony/runtime": "^7.4 || ^8.0",
+        "symfony/web-profiler-bundle": "^7.4 || ^8.0",
+        "symfony/webpack-encore-bundle": "^2.2",
+        "tmonier/sylius-company-accounts-plugin": "^1.0",
+        "tmonier/sylius-quick-order-plugin": "^1.1",
+        "tmonier/sylius-quote-request-plugin": "^1.0",
+        "tmonier/sylius-trade-credit-plugin": "^1.0"
+    },
+    "suggest": {
+        "tmonier/sylius-quick-order-plugin": "quick_order_add tool (lines by SKU, same validation as the quick order page) and reorder through the quick order rules",
+        "tmonier/sylius-quote-request-plugin": "request_quote and list_my_quotes tools",
+        "tmonier/sylius-trade-credit-plugin": "get_trade_credit_statement tool (limit, available credit, open items, ageing)",
+        "tmonier/sylius-company-accounts-plugin": "Company orders visible to the member (per the company voters) in list_my_orders, get_order and reorder"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": false,
+            "php-http/discovery": false,
+            "phpstan/extension-installer": true,
+            "symfony/flex": true,
+            "symfony/runtime": true
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0-dev"
+        },
+        "symfony": {
+            "require": "^7.4"
+        },
+        "public-dir": "vendor/sylius/test-application/public"
+    },
+    "autoload": {
+        "psr-4": {
+            "Tmonier\\SyliusB2bMcpPlugin\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\Tmonier\\SyliusB2bMcpPlugin\\": [
+                "tests/",
+                "tests/TestApplication/src/"
+            ]
+        }
+    },
+    "scripts": {
+        "database-reset": [
+            "vendor/bin/console doctrine:database:drop --force --if-exists",
+            "vendor/bin/console doctrine:database:create",
+            "vendor/bin/console doctrine:migration:migrate -n",
+            "vendor/bin/console sylius:fixtures:load -n"
+        ],
+        "frontend-clear": [
+            "cd vendor/sylius/test-application && yarn install && yarn build",
+            "vendor/bin/console assets:install"
+        ],
+        "test-app-init": [
+            "@database-reset",
+            "@frontend-clear"
+        ]
+    },
+    "authors": [
+        {
+            "name": "Thibaut Monier"
+        }
+    ]
+}

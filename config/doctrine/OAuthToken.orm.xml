@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping">
+
+    <entity name="Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken" table="tmonier_b2b_mcp_token">
+        <indexes>
+            <index name="tmonier_b2b_mcp_token_expires_idx" columns="expires_at" />
+        </indexes>
+
+        <id name="id" column="id" type="integer">
+            <generator strategy="AUTO" />
+        </id>
+
+        <field name="type" column="type" type="string" length="16" />
+        <field name="identifierHash" column="identifier_hash" type="string" length="64" unique="true" />
+        <field name="parentHash" column="parent_hash" type="string" length="64" nullable="true" />
+        <field name="scopes" column="scopes" type="json" />
+        <field name="expiresAt" column="expires_at" type="datetime_immutable" />
+        <field name="createdAt" column="created_at" type="datetime_immutable" />
+        <field name="revokedAt" column="revoked_at" type="datetime_immutable" nullable="true" />
+
+        <many-to-one field="connection" target-entity="Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface">
+            <join-column name="connection_id" referenced-column-name="id" nullable="false" on-delete="CASCADE" />
+        </many-to-one>
+    </entity>
+
+</doctrine-mapping>

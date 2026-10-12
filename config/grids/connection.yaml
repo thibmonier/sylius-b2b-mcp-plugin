@@ -1,0 +1,59 @@
+sylius_grid:
+    grids:
+        tmonier_b2b_mcp_admin_connection:
+            driver:
+                name: doctrine/orm
+                options:
+                    class: "%tmonier_b2b_mcp.model.connection.class%"
+                    repository:
+                        method: createListQueryBuilder
+            sorting:
+                createdAt: desc
+            fields:
+                customer:
+                    type: twig
+                    label: sylius.ui.customer
+                    path: customer
+                    options:
+                        template: "@SyliusAdmin/shared/grid/field/customer.html.twig"
+                client:
+                    type: string
+                    label: tmonier_b2b_mcp.ui.assistant
+                    path: client.name
+                channelCode:
+                    type: string
+                    label: sylius.ui.channel
+                scopes:
+                    type: twig
+                    label: tmonier_b2b_mcp.ui.permissions
+                    options:
+                        template: "@TmonierSyliusB2bMcpPlugin/admin/grid/field/scopes.html.twig"
+                createdAt:
+                    type: twig
+                    label: tmonier_b2b_mcp.ui.connected_at
+                    sortable: ~
+                    options:
+                        template: "@SyliusAdmin/shared/grid/field/date.html.twig"
+                lastUsedAt:
+                    type: twig
+                    label: tmonier_b2b_mcp.ui.last_used_at
+                    sortable: ~
+                    options:
+                        template: "@SyliusAdmin/shared/grid/field/date.html.twig"
+                revokedAt:
+                    type: twig
+                    label: tmonier_b2b_mcp.ui.revoked_at
+                    sortable: ~
+                    options:
+                        template: "@SyliusAdmin/shared/grid/field/date.html.twig"
+            filters:
+                search:
+                    type: string
+                    label: sylius.ui.search
+                    options:
+                        fields: [customer.email, client.name]
+            actions:
+                item:
+                    revoke:
+                        type: tmonier_b2b_mcp_revoke
+                        label: tmonier_b2b_mcp.ui.revoke

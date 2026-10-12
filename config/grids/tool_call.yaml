@@ -1,0 +1,59 @@
+sylius_grid:
+    grids:
+        tmonier_b2b_mcp_admin_tool_call:
+            driver:
+                name: doctrine/orm
+                options:
+                    class: "%tmonier_b2b_mcp.model.tool_call.class%"
+            sorting:
+                createdAt: desc
+            fields:
+                createdAt:
+                    type: twig
+                    label: sylius.ui.date
+                    sortable: ~
+                    options:
+                        template: "@SyliusAdmin/shared/grid/field/date.html.twig"
+                customerEmail:
+                    type: string
+                    label: sylius.ui.customer
+                clientName:
+                    type: string
+                    label: tmonier_b2b_mcp.ui.assistant
+                tool:
+                    type: string
+                    label: tmonier_b2b_mcp.ui.tool
+                    sortable: ~
+                outcome:
+                    type: twig
+                    label: tmonier_b2b_mcp.ui.outcome
+                    sortable: ~
+                    options:
+                        template: "@TmonierSyliusB2bMcpPlugin/admin/grid/field/outcome.html.twig"
+                arguments:
+                    type: twig
+                    label: tmonier_b2b_mcp.ui.arguments
+                    options:
+                        template: "@TmonierSyliusB2bMcpPlugin/admin/grid/field/arguments.html.twig"
+                durationMs:
+                    type: string
+                    label: tmonier_b2b_mcp.ui.duration_ms
+            filters:
+                customerEmail:
+                    type: string
+                    label: sylius.ui.customer
+                tool:
+                    type: string
+                    label: tmonier_b2b_mcp.ui.tool
+                outcome:
+                    type: select
+                    label: tmonier_b2b_mcp.ui.outcome
+                    form_options:
+                        choices:
+                            tmonier_b2b_mcp.ui.outcome_success: success
+                            tmonier_b2b_mcp.ui.outcome_refused: refused
+                            tmonier_b2b_mcp.ui.outcome_error: error
+                            tmonier_b2b_mcp.ui.outcome_replayed: replayed
+                createdAt:
+                    type: date
+                    label: sylius.ui.date

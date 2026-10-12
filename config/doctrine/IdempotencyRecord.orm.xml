@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping">
+
+    <entity name="Tmonier\SyliusB2bMcpPlugin\Entity\IdempotencyRecord" table="tmonier_b2b_mcp_idempotency">
+        <unique-constraints>
+            <unique-constraint name="tmonier_b2b_mcp_idempotency_key_uniq" columns="customer_id,tool,idempotency_key" />
+        </unique-constraints>
+        <indexes>
+            <index name="tmonier_b2b_mcp_idempotency_created_idx" columns="created_at" />
+        </indexes>
+
+        <id name="id" column="id" type="integer">
+            <generator strategy="AUTO" />
+        </id>
+
+        <field name="customerId" column="customer_id" type="integer" />
+        <field name="tool" column="tool" type="string" length="64" />
+        <field name="idempotencyKey" column="idempotency_key" type="string" length="128" />
+        <field name="requestHash" column="request_hash" type="string" length="64" />
+        <field name="response" column="response" type="text" nullable="true" />
+        <field name="createdAt" column="created_at" type="datetime_immutable" />
+    </entity>
+
+</doctrine-mapping>

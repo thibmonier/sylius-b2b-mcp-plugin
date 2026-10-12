@@ -1,0 +1,7 @@
+imports:
+    - { resource: "grids/*.yaml" }
+
+sylius_grid:
+    templates:
+        action:
+            tmonier_b2b_mcp_revoke: '@TmonierSyliusB2bMcpPlugin/admin/grid/action/revoke.html.twig'

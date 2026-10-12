@@ -1,0 +1,8 @@
+{% if data.active %}
+    <form action="{{ path('tmonier_b2b_mcp_admin_connection_revoke', {'id': data.id}) }}" method="post" class="d-inline" {{ sylius_test_html_attribute('tmonier-b2b-mcp-admin-revoke', data.id) }}>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('tmonier_b2b_mcp_admin_revoke_' ~ data.id) }}">
+        <button class="btn btn-sm btn-outline-danger" type="submit" onclick="return confirm('{{ 'tmonier_b2b_mcp.ui.revoke_confirm'|trans|e('js') }}');">
+            {{ ux_icon('tabler:plug-connected-x') }} {{ action.label|trans }}
+        </button>
+    </form>
+{% endif %}

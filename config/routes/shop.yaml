@@ -1,0 +1,21 @@
+# Under /account: the shop login is required (Sylius access control).
+
+tmonier_b2b_mcp_shop_authorize:
+    path: /account/ai-assistants/authorize
+    methods: [GET, POST]
+    defaults:
+        _controller: tmonier_b2b_mcp.controller.shop.consent
+
+tmonier_b2b_mcp_shop_connections:
+    path: /account/ai-assistants
+    methods: [GET]
+    defaults:
+        _controller: tmonier_b2b_mcp.controller.shop.connection::indexAction
+
+tmonier_b2b_mcp_shop_connection_revoke:
+    path: /account/ai-assistants/{id}/revoke
+    methods: [POST]
+    requirements:
+        id: '\d+'
+    defaults:
+        _controller: tmonier_b2b_mcp.controller.shop.connection::revokeAction

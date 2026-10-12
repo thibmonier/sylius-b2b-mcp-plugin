@@ -1,0 +1,2 @@
+{% set colors = {'success': 'green', 'refused': 'yellow', 'error': 'red', 'replayed': 'blue'} %}
+<span class="badge bg-{{ colors[data]|default('secondary') }}-lt">{{ ('tmonier_b2b_mcp.ui.outcome_' ~ data)|trans }}</span>

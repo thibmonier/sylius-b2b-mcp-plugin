@@ -1,0 +1,3 @@
+tmonier_b2b_mcp:
+    flash:
+        connection_revoked: "Der Assistent wurde getrennt."

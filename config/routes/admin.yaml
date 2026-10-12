@@ -1,0 +1,35 @@
+tmonier_b2b_mcp_admin_connection:
+    resource: |
+        alias: tmonier_b2b_mcp.connection
+        section: admin
+        templates: "@SyliusAdmin\\shared\\crud"
+        only: ['index']
+        grid: tmonier_b2b_mcp_admin_connection
+        permission: true
+        path: ai-assistants/connections
+        vars:
+            all:
+                hook_prefix: tmonier_b2b_mcp_admin.connection
+    type: sylius.resource
+
+tmonier_b2b_mcp_admin_connection_revoke:
+    path: /ai-assistants/connections/{id}/revoke
+    methods: [POST]
+    requirements:
+        id: '\d+'
+    defaults:
+        _controller: tmonier_b2b_mcp.controller.admin.connection::revokeAction
+
+tmonier_b2b_mcp_admin_tool_call:
+    resource: |
+        alias: tmonier_b2b_mcp.tool_call
+        section: admin
+        templates: "@SyliusAdmin\\shared\\crud"
+        only: ['index']
+        grid: tmonier_b2b_mcp_admin_tool_call
+        permission: true
+        path: ai-assistants/tool-calls
+        vars:
+            all:
+                hook_prefix: tmonier_b2b_mcp_admin.tool_call
+    type: sylius.resource

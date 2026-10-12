@@ -1,0 +1,17 @@
+sylius_mcp_server:
+    resource: "@SyliusMcpServerPlugin/config/routes.yaml"
+
+tmonier_sylius_b2b_mcp:
+    resource: "@TmonierSyliusB2bMcpPlugin/config/routes.yaml"
+
+tmonier_sylius_trade_credit:
+    resource: "@TmonierSyliusTradeCreditPlugin/config/routes.yaml"
+
+tmonier_sylius_quick_order:
+    resource: "@TmonierSyliusQuickOrderPlugin/config/routes.yaml"
+
+tmonier_sylius_quote_request:
+    resource: "@TmonierSyliusQuoteRequestPlugin/config/routes.yaml"
+
+tmonier_sylius_company_accounts:
+    resource: "@TmonierSyliusCompanyAccountsPlugin/config/routes.yaml"

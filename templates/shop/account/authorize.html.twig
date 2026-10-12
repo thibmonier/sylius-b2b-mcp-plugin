@@ -1,0 +1,35 @@
+{% extends '@SyliusShop/shared/layout/base.html.twig' %}
+
+{% block title %}{{ 'tmonier_b2b_mcp.ui.authorize_title'|trans({'%client%': client_name}) }} | {{ parent() }}{% endblock %}
+
+{% block content %}
+    <div class="container mb-auto">
+        <div class="row my-5 justify-content-center">
+            <div class="col-12 col-md-8 col-lg-6">
+                <div class="card" {{ sylius_test_html_attribute('tmonier-b2b-mcp-consent') }}>
+                    <div class="card-body p-4">
+                        <h1 class="h3 mb-3">{{ 'tmonier_b2b_mcp.ui.authorize_title'|trans({'%client%': client_name}) }}</h1>
+                        <p>{{ 'tmonier_b2b_mcp.ui.authorize_intro'|trans({'%client%': client_name, '%shop%': channel.name}) }}</p>
+                        <p class="small text-body-secondary" {{ sylius_test_html_attribute('tmonier-b2b-mcp-redirect-host') }}>
+                            {{ 'tmonier_b2b_mcp.ui.authorize_redirect'|trans({'%host%': redirect_host}) }}
+                        </p>
+
+                        <h2 class="h6 mt-4">{{ 'tmonier_b2b_mcp.ui.authorize_permissions'|trans }}</h2>
+                        <ul {{ sylius_test_html_attribute('tmonier-b2b-mcp-scopes') }}>
+                            {% for scope in scopes %}
+                                <li>{{ ('tmonier_b2b_mcp.scope.' ~ scope|replace({':': '_'}))|trans }}</li>
+                            {% endfor %}
+                        </ul>
+                        <div class="alert alert-light small">{{ 'tmonier_b2b_mcp.ui.authorize_never'|trans }}</div>
+
+                        <form method="post" class="d-flex gap-2 justify-content-end mt-4">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token('tmonier_b2b_mcp_consent') }}">
+                            <button type="submit" name="decision" value="deny" class="btn btn-outline-secondary" {{ sylius_test_html_attribute('tmonier-b2b-mcp-deny') }}>{{ 'tmonier_b2b_mcp.ui.deny'|trans }}</button>
+                            <button type="submit" name="decision" value="approve" class="btn btn-primary" {{ sylius_test_html_attribute('tmonier-b2b-mcp-approve') }}>{{ 'tmonier_b2b_mcp.ui.approve'|trans }}</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
