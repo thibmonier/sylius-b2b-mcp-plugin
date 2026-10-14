@@ -13,15 +13,15 @@ use Tmonier\SyliusB2bMcpPlugin\Security\AuthenticatedConnection;
  * The cart of the customer on the channel: the one the shop shows after login (latest non-empty
  * cart of the customer, see CustomerAndChannelBasedCartContext), or a new one.
  */
-final class CustomerCartProvider
+final readonly class CustomerCartProvider
 {
     /**
      * @param OrderRepositoryInterface<OrderInterface> $orderRepository
      * @param FactoryInterface<OrderInterface> $orderFactory
      */
     public function __construct(
-        private readonly OrderRepositoryInterface $orderRepository,
-        private readonly FactoryInterface $orderFactory,
+        private OrderRepositoryInterface $orderRepository,
+        private FactoryInterface $orderFactory,
     ) {
     }
 
@@ -34,7 +34,7 @@ final class CustomerCartProvider
     public function getOrCreate(AuthenticatedConnection $connection): OrderInterface
     {
         $cart = $this->find($connection);
-        if (null !== $cart) {
+        if ($cart instanceof \Sylius\Component\Core\Model\OrderInterface) {
             return $cart;
         }
 

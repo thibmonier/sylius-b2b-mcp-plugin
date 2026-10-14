@@ -107,6 +107,6 @@ class Connection implements ConnectionInterface
 
     public function isActive(): bool
     {
-        return null === $this->revokedAt;
+        return !$this->revokedAt instanceof \DateTimeImmutable;
     }
 }

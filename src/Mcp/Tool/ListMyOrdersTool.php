@@ -14,15 +14,15 @@ use Tmonier\SyliusB2bMcpPlugin\Order\OrderFinder;
 use Tmonier\SyliusB2bMcpPlugin\Order\OrderPresenter;
 use Tmonier\SyliusB2bMcpPlugin\Security\AuthenticatedConnection;
 
-final class ListMyOrdersTool implements B2bToolInterface
+final readonly class ListMyOrdersTool implements B2bToolInterface
 {
     public const NAME = 'list_my_orders';
 
     public function __construct(
-        private readonly ToolRunner $runner,
-        private readonly OrderFinder $orderFinder,
-        private readonly OrderPresenter $presenter,
-        private readonly int $maxPageSize,
+        private ToolRunner $runner,
+        private OrderFinder $orderFinder,
+        private OrderPresenter $presenter,
+        private int $maxPageSize,
     ) {
     }
 
@@ -60,7 +60,7 @@ final class ListMyOrdersTool implements B2bToolInterface
                 'limit' => $limit,
                 'total' => $result['total'],
                 'pages' => (int) ceil($result['total'] / $limit),
-                'orders' => array_map(fn ($order): array => $this->presenter->summary($order, $this->orderFinder->isOwn($connection, $order)), $result['orders']),
+                'orders' => array_map(fn (\Sylius\Component\Core\Model\OrderInterface $order): array => $this->presenter->summary($order, $this->orderFinder->isOwn($connection, $order)), $result['orders']),
             ];
         });
     }

@@ -13,9 +13,9 @@ use Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Entity\AccessTokenEntity;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
 
-final class AccessTokenRepository implements AccessTokenRepositoryInterface
+final readonly class AccessTokenRepository implements AccessTokenRepositoryInterface
 {
-    public function __construct(private readonly TokenStore $store)
+    public function __construct(private TokenStore $store)
     {
     }
 
@@ -36,7 +36,7 @@ final class AccessTokenRepository implements AccessTokenRepositoryInterface
     public function persistNewAccessToken(AccessTokenEntityInterface $accessTokenEntity): void
     {
         $connection = $this->store->findConnection($accessTokenEntity->getUserIdentifier());
-        if (null === $connection || !$connection->isActive()) {
+        if (!$connection instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface || !$connection->isActive()) {
             throw OAuthServerException::invalidGrant('The connection was revoked.');
         }
 
@@ -58,6 +58,6 @@ final class AccessTokenRepository implements AccessTokenRepositoryInterface
     {
         $token = $this->store->find(OAuthToken::TYPE_ACCESS, $tokenId);
 
-        return null === $token || null !== $token->getRevokedAt() || !$token->getConnection()->isActive();
+        return !$token instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken || $token->getRevokedAt() instanceof \DateTimeImmutable || !$token->getConnection()->isActive();
     }
 }

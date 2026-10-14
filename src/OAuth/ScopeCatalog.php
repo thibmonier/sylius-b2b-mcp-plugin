@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tmonier\SyliusB2bMcpPlugin\OAuth;
 
 /** Scopes this shop offers: b2b:approve only when approval decisions are enabled (opt-in). */
-final class ScopeCatalog
+final readonly class ScopeCatalog
 {
-    public function __construct(private readonly bool $approvalDecisions)
+    public function __construct(private bool $approvalDecisions)
     {
     }
 

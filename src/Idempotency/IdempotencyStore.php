@@ -14,7 +14,7 @@ use Tmonier\SyliusB2bMcpPlugin\Mcp\ToolRefusal;
  * the same key and arguments gets the stored result instead of changing the cart twice. Written
  * with DBAL so that a unique violation (two concurrent calls) never closes the entity manager.
  */
-final class IdempotencyStore
+final readonly class IdempotencyStore
 {
     private const TABLE = 'tmonier_b2b_mcp_idempotency';
 
@@ -22,9 +22,9 @@ final class IdempotencyStore
     private const STALE_CLAIM = 'PT5M';
 
     public function __construct(
-        private readonly Connection $connection,
-        private readonly ClockInterface $clock,
-        private readonly int $ttlHours,
+        private Connection $connection,
+        private ClockInterface $clock,
+        private int $ttlHours,
     ) {
     }
 
@@ -44,7 +44,7 @@ final class IdempotencyStore
      */
     public function claim(int $customerId, string $tool, string $key, array $arguments): ?array
     {
-        $requestHash = self::hash($arguments);
+        $requestHash = $this->hash($arguments);
         $now = $this->clock->now();
 
         $row = $this->find($customerId, $tool, $key);
@@ -114,7 +114,7 @@ final class IdempotencyStore
     }
 
     /** @param array<string, mixed> $arguments */
-    private static function hash(array $arguments): string
+    private function hash(array $arguments): string
     {
         ksort($arguments);
 

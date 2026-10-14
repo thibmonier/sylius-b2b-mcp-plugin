@@ -54,12 +54,12 @@ final class OrderPresenter
                 static fn (PaymentInterface $payment): ?string => Text::clean($payment->getMethod()?->getName()),
                 $order->getPayments()->toArray(),
             ))),
-            'shipping_address' => null === $address ? null : [
+            'shipping_address' => $address instanceof \Sylius\Component\Core\Model\AddressInterface ? [
                 'company' => Text::clean($address->getCompany()),
                 'city' => Text::clean($address->getCity()),
                 'postcode' => Text::clean($address->getPostcode(), 32),
                 'country_code' => $address->getCountryCode(),
-            ],
+            ] : null,
         ];
     }
 

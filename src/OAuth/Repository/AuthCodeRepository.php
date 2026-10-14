@@ -13,9 +13,9 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\Entity\AuthCodeEntity;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
 
 /** Authorization codes are single use: a second redemption revokes the tokens of the connection (OAuth 2.1, 4.1.2). */
-final class AuthCodeRepository implements AuthCodeRepositoryInterface
+final readonly class AuthCodeRepository implements AuthCodeRepositoryInterface
 {
-    public function __construct(private readonly TokenStore $store)
+    public function __construct(private TokenStore $store)
     {
     }
 
@@ -27,7 +27,7 @@ final class AuthCodeRepository implements AuthCodeRepositoryInterface
     public function persistNewAuthCode(AuthCodeEntityInterface $authCodeEntity): void
     {
         $connection = $this->store->findConnection($authCodeEntity->getUserIdentifier());
-        if (null === $connection || !$connection->isActive()) {
+        if (!$connection instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface || !$connection->isActive()) {
             throw OAuthServerException::accessDenied('The connection was revoked.');
         }
 
@@ -48,10 +48,10 @@ final class AuthCodeRepository implements AuthCodeRepositoryInterface
     public function isAuthCodeRevoked(string $codeId): bool
     {
         $code = $this->store->find(OAuthToken::TYPE_AUTH_CODE, $codeId);
-        if (null === $code) {
+        if (!$code instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken) {
             return true;
         }
-        if (null !== $code->getRevokedAt()) {
+        if ($code->getRevokedAt() instanceof \DateTimeImmutable) {
             if ($this->store->isReplay($code)) {
                 $this->store->revokeAllForConnection($code->getConnection());
             }

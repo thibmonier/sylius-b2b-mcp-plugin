@@ -16,13 +16,13 @@ class IdempotencyRecord
 
     private ?string $response = null;
 
-    private \DateTimeImmutable $createdAt;
+    private readonly \DateTimeImmutable $createdAt;
 
     public function __construct(
-        private CustomerInterface $customer,
-        private string $tool,
-        private string $idempotencyKey,
-        private string $requestHash,
+        private readonly CustomerInterface $customer,
+        private readonly string $tool,
+        private readonly string $idempotencyKey,
+        private readonly string $requestHash,
     ) {
         $this->createdAt = new \DateTimeImmutable();
     }

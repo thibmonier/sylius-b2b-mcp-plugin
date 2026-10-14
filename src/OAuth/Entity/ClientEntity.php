@@ -7,9 +7,9 @@ namespace Tmonier\SyliusB2bMcpPlugin\OAuth\Entity;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use Tmonier\SyliusB2bMcpPlugin\Entity\OAuthClient;
 
-final class ClientEntity implements ClientEntityInterface
+final readonly class ClientEntity implements ClientEntityInterface
 {
-    public function __construct(private readonly OAuthClient $client)
+    public function __construct(private OAuthClient $client)
     {
     }
 

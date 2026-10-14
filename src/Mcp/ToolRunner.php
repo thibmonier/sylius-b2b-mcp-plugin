@@ -16,12 +16,12 @@ use Tmonier\SyliusB2bMcpPlugin\Security\CurrentConnection;
  * idempotency key (cart-changing tools), audit log entry, and refusals returned to the assistant
  * as tool errors. Results are plain data (JSON): nothing in them is meant as an instruction.
  */
-final class ToolRunner
+final readonly class ToolRunner
 {
     public function __construct(
-        private readonly CurrentConnection $currentConnection,
-        private readonly IdempotencyStore $idempotencyStore,
-        private readonly ToolCallLogger $logger,
+        private CurrentConnection $currentConnection,
+        private IdempotencyStore $idempotencyStore,
+        private ToolCallLogger $logger,
     ) {
     }
 
@@ -38,7 +38,7 @@ final class ToolRunner
         $claimed = false;
 
         try {
-            if (null === $connection) {
+            if (!$connection instanceof \Tmonier\SyliusB2bMcpPlugin\Security\AuthenticatedConnection) {
                 throw new ToolRefusal('Not signed in: this tool needs a shop account connected to the assistant (OAuth).');
             }
             if (!$connection->hasScope($scope)) {
@@ -73,16 +73,14 @@ final class ToolRunner
         } catch (ToolRefusal $refusal) {
             $this->release($connection, $tool, $idempotencyKey, $claimed);
             // Calls without a customer (stdio transport) are not recorded: nothing to attribute.
-            if (null !== $connection) {
+            if ($connection instanceof \Tmonier\SyliusB2bMcpPlugin\Security\AuthenticatedConnection) {
                 $this->log($connection, $tool, $arguments, ToolCallInterface::OUTCOME_REFUSED, $refusal->getMessage(), $start);
             }
 
             throw new ToolCallException($refusal->getMessage(), 0, $refusal);
         } catch (\Throwable $exception) {
             $this->release($connection, $tool, $idempotencyKey, $claimed);
-            if (null !== $connection) {
-                $this->log($connection, $tool, $arguments, ToolCallInterface::OUTCOME_ERROR, $exception::class, $start);
-            }
+            $this->log($connection, $tool, $arguments, ToolCallInterface::OUTCOME_ERROR, $exception::class, $start);
 
             throw $exception;
         }

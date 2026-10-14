@@ -13,12 +13,12 @@ use Tmonier\SyliusCompanyAccountsPlugin\Repository\CompanyOrderRepositoryInterfa
 use Tmonier\SyliusCompanyAccountsPlugin\Security\CompanyPermissions;
 
 /** Bridge to tmonier/sylius-company-accounts-plugin: its ORDER_VIEW_COMPANY voter decides. */
-final class CompanyAccountsOrders implements CompanyOrdersInterface
+final readonly class CompanyAccountsOrders implements CompanyOrdersInterface
 {
     public function __construct(
-        private readonly CurrentMemberResolverInterface $memberResolver,
-        private readonly CompanyOrderRepositoryInterface $companyOrderRepository,
-        private readonly AuthorizationCheckerInterface $authorizationChecker,
+        private CurrentMemberResolverInterface $memberResolver,
+        private CompanyOrderRepositoryInterface $companyOrderRepository,
+        private AuthorizationCheckerInterface $authorizationChecker,
     ) {
     }
 
@@ -30,7 +30,7 @@ final class CompanyAccountsOrders implements CompanyOrdersInterface
     public function createQueryBuilder(ChannelInterface $channel): ?QueryBuilder
     {
         $company = $this->memberResolver->getMember()?->getCompany();
-        if (null === $company || !$this->authorizationChecker->isGranted(CompanyPermissions::ORDER_VIEW_COMPANY, $company)) {
+        if (!$company instanceof \Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface || !$this->authorizationChecker->isGranted(CompanyPermissions::ORDER_VIEW_COMPANY, $company)) {
             return null;
         }
 
@@ -43,7 +43,7 @@ final class CompanyAccountsOrders implements CompanyOrdersInterface
     public function findOrder(string $number, ChannelInterface $channel): ?OrderInterface
     {
         $company = $this->memberResolver->getMember()?->getCompany();
-        if (null === $company) {
+        if (!$company instanceof \Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface) {
             return null;
         }
         $order = $this->companyOrderRepository->findOrderByCompanyAndNumber($company, $number);

@@ -127,7 +127,7 @@ final class OAuthFlowTest extends WebTestCase
         $customer = $this->customer();
         $client = $this->register(['client_name' => 'Claude', 'redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']);
         $clientId = self::stringAt($client, 'client_id');
-        [$verifier, $challenge] = self::pkce();
+        [$verifier, $challenge] = $this->pkce();
 
         // Not signed in on the shop: the consent page sends the customer to the login page.
         $this->client->request('GET', '/mcp-oauth/authorize?' . http_build_query($this->authorizeQuery($clientId, $challenge)));
@@ -183,7 +183,7 @@ final class OAuthFlowTest extends WebTestCase
     {
         $customer = $this->customer();
         $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
-        [$verifier, $challenge] = self::pkce();
+        [$verifier, $challenge] = $this->pkce();
         $code = $this->approve($customer, $clientId, $challenge);
         $request = ['grant_type' => 'authorization_code', 'client_id' => $clientId, 'code' => $code, 'redirect_uri' => self::REDIRECT_URI, 'code_verifier' => $verifier];
 
@@ -200,11 +200,11 @@ final class OAuthFlowTest extends WebTestCase
     {
         $customer = $this->customer();
         $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
-        [$verifier, $challenge] = self::pkce();
+        [$verifier, $challenge] = $this->pkce();
         $tokens = $this->token(['grant_type' => 'authorization_code', 'client_id' => $clientId, 'code' => $this->approve($customer, $clientId, $challenge), 'redirect_uri' => self::REDIRECT_URI, 'code_verifier' => $verifier]);
 
         // The customer approves the assistant again, for reading only.
-        [$verifier, $challenge] = self::pkce();
+        [$verifier, $challenge] = $this->pkce();
         $this->loginShop($customer);
         $query = ['scope' => 'b2b:read'] + $this->authorizeQuery($clientId, $challenge);
         $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($query));
@@ -261,7 +261,7 @@ final class OAuthFlowTest extends WebTestCase
     public function testAClientWhoseRedirectUriIsNoLongerAllowedCannotAuthorize(): void
     {
         $this->connection()->executeStatement("INSERT INTO tmonier_b2b_mcp_client (identifier, name, redirect_uris, created_at) VALUES ('legacy-client', 'Legacy', '[\"https://legacy.example.com/callback\"]', ?)", [(new \DateTimeImmutable())->format('Y-m-d H:i:s')]);
-        [, $challenge] = self::pkce();
+        [, $challenge] = $this->pkce();
         $query = ['client_id' => 'legacy-client', 'redirect_uri' => 'https://legacy.example.com/callback'] + $this->authorizeQuery('legacy-client', $challenge);
 
         $this->client->request('GET', '/mcp-oauth/authorize?' . http_build_query($query));
@@ -289,7 +289,7 @@ final class OAuthFlowTest extends WebTestCase
     public function testTheResourceIndicatorMustNameThisEndpoint(): void
     {
         $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
-        [, $challenge] = self::pkce();
+        [, $challenge] = $this->pkce();
 
         $this->client->request('GET', '/mcp-oauth/authorize?' . http_build_query($this->authorizeQuery($clientId, $challenge) + ['resource' => 'https://other.example.com/mcp']));
         self::assertResponseStatusCodeSame(400);
@@ -304,7 +304,7 @@ final class OAuthFlowTest extends WebTestCase
         $customer = $this->customer();
         $client = $this->register(['client_name' => "Totally Legit Bank \u{202E}\u{200B}", 'redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']);
         self::assertSame('Totally Legit Bank', $client['client_name'], 'Control and bidi characters are removed.');
-        [, $challenge] = self::pkce();
+        [, $challenge] = $this->pkce();
         $this->loginShop($customer);
 
         $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($this->authorizeQuery(self::stringAt($client, 'client_id'), $challenge)));
@@ -323,7 +323,7 @@ final class OAuthFlowTest extends WebTestCase
         $registrar = $this->service('tmonier_b2b_mcp.oauth.client_registrar');
         self::assertInstanceOf(\Tmonier\SyliusB2bMcpPlugin\OAuth\ClientRegistrar::class, $registrar);
         [$client] = $registrar->create('Claude for Acme', [self::REDIRECT_URI], false);
-        [, $challenge] = self::pkce();
+        [, $challenge] = $this->pkce();
         $this->loginShop($customer);
 
         $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($this->authorizeQuery($client->getIdentifier(), $challenge)));
@@ -339,7 +339,7 @@ final class OAuthFlowTest extends WebTestCase
         $this->loginShop($customer);
 
         foreach ([false => ['b2b:read', 'b2b:cart'], true => ['b2b:read', 'b2b:cart', 'b2b:approve']] as $tick => $expected) {
-            [, $challenge] = self::pkce();
+            [, $challenge] = $this->pkce();
             $query = ['scope' => 'b2b:read b2b:cart b2b:approve'] + $this->authorizeQuery($clientId, $challenge);
             $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($query));
             self::assertCount(1, $crawler->filter('[data-test-tmonier-b2b-mcp-approve-warning]'));
@@ -360,7 +360,7 @@ final class OAuthFlowTest extends WebTestCase
         }
 
         // A client asking for no scope gets the default ones: never b2b:approve.
-        [, $challenge] = self::pkce();
+        [, $challenge] = $this->pkce();
         $query = $this->authorizeQuery($clientId, $challenge);
         unset($query['scope']);
         $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($query));
@@ -377,7 +377,7 @@ final class OAuthFlowTest extends WebTestCase
     {
         $customer = $this->customer();
         $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
-        [$verifier, $challenge] = self::pkce();
+        [$verifier, $challenge] = $this->pkce();
         $this->loginShop($customer);
         $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query(['scope' => 'b2b:read b2b:cart b2b:approve'] + $this->authorizeQuery($clientId, $challenge)));
         $form = $crawler->filter('[data-test-tmonier-b2b-mcp-approve]')->form();
@@ -438,7 +438,7 @@ final class OAuthFlowTest extends WebTestCase
     {
         $customer = $this->customer();
         $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
-        [, $challenge] = self::pkce();
+        [, $challenge] = $this->pkce();
         $this->loginShop($customer);
 
         $crawler = $this->client->request('GET', '/en_US/account/ai-assistants/authorize?' . http_build_query($this->authorizeQuery($clientId, $challenge)));
@@ -454,7 +454,7 @@ final class OAuthFlowTest extends WebTestCase
     {
         $customer = $this->customer();
         $clientId = self::stringAt($this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']), 'client_id');
-        [, $challenge] = self::pkce();
+        [, $challenge] = $this->pkce();
         $this->loginShop($customer);
 
         $this->client->request('POST', '/en_US/account/ai-assistants/authorize?' . http_build_query($this->authorizeQuery($clientId, $challenge)), ['decision' => 'approve', '_csrf_token' => 'forged']);
@@ -519,7 +519,7 @@ final class OAuthFlowTest extends WebTestCase
         $customer = $this->customer();
         $client = $this->register(['redirect_uris' => [self::REDIRECT_URI], 'token_endpoint_auth_method' => 'none']);
         $clientId = self::stringAt($client, 'client_id');
-        [$verifier, $challenge] = self::pkce();
+        [$verifier, $challenge] = $this->pkce();
         $tokens = $this->token(['grant_type' => 'authorization_code', 'client_id' => $clientId, 'code' => $this->approve($customer, $clientId, $challenge), 'redirect_uri' => self::REDIRECT_URI, 'code_verifier' => $verifier]);
 
         // Another client cannot revoke it.
@@ -582,7 +582,7 @@ final class OAuthFlowTest extends WebTestCase
     }
 
     /** @return array{string, string} verifier and S256 challenge */
-    private static function pkce(): array
+    private function pkce(): array
     {
         $verifier = rtrim(strtr(base64_encode(random_bytes(48)), '+/', '-_'), '=');
 

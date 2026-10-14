@@ -12,19 +12,19 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\PsrBridge;
 use Tmonier\SyliusB2bMcpPlugin\RateLimit\RateLimiter;
 
 /** Token endpoint: authorization code (with PKCE verifier) and refresh token grants. */
-final class TokenController
+final readonly class TokenController
 {
     public function __construct(
-        private readonly AuthorizationServer $authorizationServer,
-        private readonly PsrBridge $psrBridge,
-        private readonly RateLimiter $rateLimiter,
+        private AuthorizationServer $authorizationServer,
+        private PsrBridge $psrBridge,
+        private RateLimiter $rateLimiter,
     ) {
     }
 
     public function __invoke(Request $request): Response
     {
         $limited = $this->rateLimiter->consumeOAuthRequest($request->getClientIp(), $request->getUser() ?? $request->request->get('client_id'));
-        if (null !== $limited) {
+        if ($limited instanceof \Symfony\Component\HttpFoundation\Response) {
             return $limited;
         }
 

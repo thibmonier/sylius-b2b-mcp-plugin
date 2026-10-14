@@ -7,9 +7,9 @@ namespace Tmonier\SyliusB2bMcpPlugin\Cart;
 use Sylius\Component\Core\Model\OrderInterface;
 
 /** A cart holding an accepted quote (tmonier/sylius-quote-request-plugin) keeps its negotiated lines. */
-final class CartLockChecker
+final readonly class CartLockChecker
 {
-    public function __construct(private readonly ?object $quoteCartChecker = null)
+    public function __construct(private ?object $quoteCartChecker = null)
     {
     }
 

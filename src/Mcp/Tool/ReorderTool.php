@@ -24,17 +24,17 @@ use Tmonier\SyliusB2bMcpPlugin\Order\Text;
 use Tmonier\SyliusB2bMcpPlugin\Security\AuthenticatedConnection;
 
 /** Adds the items of a past order to the cart at today's prices, reporting unavailable lines and price changes. */
-final class ReorderTool implements B2bToolInterface
+final readonly class ReorderTool implements B2bToolInterface
 {
     public const NAME = 'reorder';
 
     public function __construct(
-        private readonly ToolRunner $runner,
-        private readonly OrderFinder $orderFinder,
-        private readonly CustomerCartProvider $cartProvider,
-        private readonly CartLinesAdderInterface $adder,
-        private readonly OrderPresenter $presenter,
-        private readonly ShopUrlGenerator $urlGenerator,
+        private ToolRunner $runner,
+        private OrderFinder $orderFinder,
+        private CustomerCartProvider $cartProvider,
+        private CartLinesAdderInterface $adder,
+        private OrderPresenter $presenter,
+        private ShopUrlGenerator $urlGenerator,
     ) {
     }
 
@@ -88,7 +88,7 @@ final class ReorderTool implements B2bToolInterface
                 throw new ToolRefusal(\sprintf('The products could not be added (%s).', $result->refusal));
             }
 
-            $currentPrices = self::unitPrices($cart);
+            $currentPrices = $this->unitPrices($cart);
             $report = [];
             foreach ($result->lines as $line) {
                 $previous = $previousPrices[$line->code] ?? null;
@@ -119,7 +119,7 @@ final class ReorderTool implements B2bToolInterface
     }
 
     /** @return array<string, int> */
-    private static function unitPrices(OrderInterface $cart): array
+    private function unitPrices(OrderInterface $cart): array
     {
         $prices = [];
         foreach ($cart->getItems() as $item) {

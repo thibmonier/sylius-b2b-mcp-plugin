@@ -12,11 +12,11 @@ use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
  * lose b2b:approve as soon as decisions are disabled. Best effort: no database at build time
  * (container images) is not an error, the first request or the purge command does it then.
  */
-final class ApproveScopeCacheWarmer implements CacheWarmerInterface
+final readonly class ApproveScopeCacheWarmer implements CacheWarmerInterface
 {
     public function __construct(
-        private readonly ApproveScopeGuard $guard,
-        private readonly LoggerInterface $logger,
+        private ApproveScopeGuard $guard,
+        private LoggerInterface $logger,
     ) {
     }
 

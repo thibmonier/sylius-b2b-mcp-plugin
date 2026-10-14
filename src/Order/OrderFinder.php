@@ -16,7 +16,7 @@ use Tmonier\SyliusB2bMcpPlugin\Security\AuthenticatedConnection;
  * the orders of their company when the company accounts plugin grants it. Unknown and forbidden
  * orders get the same answer.
  */
-final class OrderFinder
+final readonly class OrderFinder
 {
     public const SCOPE_MINE = 'mine';
 
@@ -24,8 +24,8 @@ final class OrderFinder
 
     /** @param OrderRepositoryInterface<OrderInterface> $orderRepository */
     public function __construct(
-        private readonly OrderRepositoryInterface $orderRepository,
-        private readonly CompanyOrdersInterface $companyOrders,
+        private OrderRepositoryInterface $orderRepository,
+        private CompanyOrdersInterface $companyOrders,
     ) {
     }
 
@@ -37,7 +37,7 @@ final class OrderFinder
                 throw new ToolRefusal('Company orders are not available on this shop.');
             }
             $queryBuilder = $this->companyOrders->createQueryBuilder($connection->channel);
-            if (null === $queryBuilder) {
+            if (!$queryBuilder instanceof \Doctrine\ORM\QueryBuilder) {
                 throw new ToolRefusal('Your company role does not give access to the company orders.');
             }
         } else {
@@ -70,7 +70,7 @@ final class OrderFinder
         }
 
         $order = '' === $number ? null : $this->companyOrders->findOrder($number, $connection->channel);
-        if (null !== $order && OrderInterface::STATE_CART !== $order->getState()) {
+        if ($order instanceof \Sylius\Component\Core\Model\OrderInterface && OrderInterface::STATE_CART !== $order->getState()) {
             return $order;
         }
 
@@ -81,7 +81,7 @@ final class OrderFinder
     {
         $owner = $order->getCustomer();
 
-        return null !== $owner && null !== $owner->getId() && $owner->getId() === $connection->customer->getId();
+        return $owner instanceof \Sylius\Component\Customer\Model\CustomerInterface && null !== $owner->getId() && $owner->getId() === $connection->customer->getId();
     }
 
     private function createOwnQueryBuilder(AuthenticatedConnection $connection): QueryBuilder

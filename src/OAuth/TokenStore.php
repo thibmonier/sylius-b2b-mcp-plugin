@@ -11,13 +11,13 @@ use Tmonier\SyliusB2bMcpPlugin\Entity\OAuthClient;
 use Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken;
 
 /** Persistence of the OAuth artefacts (hashed identifiers) shared by the league repositories and the authenticator. */
-final class TokenStore
+final readonly class TokenStore
 {
     /** @param class-string<ConnectionInterface> $connectionClass */
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly ClockInterface $clock,
-        private readonly string $connectionClass,
+        private EntityManagerInterface $entityManager,
+        private ClockInterface $clock,
+        private string $connectionClass,
     ) {
     }
 
@@ -50,13 +50,13 @@ final class TokenStore
     {
         $token = $this->find(OAuthToken::TYPE_ACCESS, $identifier);
 
-        return null !== $token && $token->isUsableAt($this->now()) ? $token : null;
+        return $token instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken && $token->isUsableAt($this->now()) ? $token : null;
     }
 
     public function revoke(string $type, string $identifier): void
     {
         $token = $this->find($type, $identifier);
-        if (null === $token) {
+        if (!$token instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken) {
             return;
         }
         $token->revoke($this->now());
@@ -91,7 +91,7 @@ final class TokenStore
     {
         $revokedAt = $token->getRevokedAt();
 
-        return null !== $revokedAt && $token->getExpiresAt() > $revokedAt;
+        return $revokedAt instanceof \DateTimeImmutable && $token->getExpiresAt() > $revokedAt;
     }
 
     public function findConnection(?string $connectionId): ?ConnectionInterface

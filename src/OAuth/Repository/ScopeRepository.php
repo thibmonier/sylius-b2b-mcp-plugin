@@ -13,12 +13,12 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\ScopeCatalog;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Scopes;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
 
-final class ScopeRepository implements ScopeRepositoryInterface
+final readonly class ScopeRepository implements ScopeRepositoryInterface
 {
     public function __construct(
-        private readonly TokenStore $store,
-        private readonly ScopeCatalog $catalog,
-        private readonly ?ApproveScopeGuard $approveScopeGuard = null,
+        private TokenStore $store,
+        private ScopeCatalog $catalog,
+        private ?ApproveScopeGuard $approveScopeGuard = null,
     ) {
     }
 
@@ -33,7 +33,7 @@ final class ScopeRepository implements ScopeRepositoryInterface
     public function finalizeScopes(array $scopes, string $grantType, ClientEntityInterface $clientEntity, ?string $userIdentifier = null, ?string $authCodeId = null): array
     {
         $connection = $this->store->findConnection($userIdentifier);
-        if (null === $connection) {
+        if (!$connection instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface) {
             return [];
         }
 

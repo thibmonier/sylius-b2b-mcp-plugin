@@ -14,20 +14,20 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
 use Tmonier\SyliusB2bMcpPlugin\RateLimit\RateLimiter;
 
 /** RFC 7009 token revocation (access or refresh token of the authenticated client). */
-final class RevocationController
+final readonly class RevocationController
 {
     public function __construct(
-        private readonly ClientRepositoryInterface $clientRepository,
-        private readonly TokenStore $tokenStore,
-        private readonly RateLimiter $rateLimiter,
-        private readonly RefreshTokenDecoder $refreshTokenDecoder,
+        private ClientRepositoryInterface $clientRepository,
+        private TokenStore $tokenStore,
+        private RateLimiter $rateLimiter,
+        private RefreshTokenDecoder $refreshTokenDecoder,
     ) {
     }
 
     public function __invoke(Request $request): Response
     {
         $limited = $this->rateLimiter->consumeOAuthRequest($request->getClientIp(), $request->getUser() ?? $request->request->get('client_id'));
-        if (null !== $limited) {
+        if ($limited instanceof \Symfony\Component\HttpFoundation\Response) {
             return $limited;
         }
 
@@ -46,7 +46,7 @@ final class RevocationController
         $candidates = [OAuthToken::TYPE_ACCESS => $value, OAuthToken::TYPE_REFRESH => $this->refreshTokenDecoder->getIdentifier($value)];
         foreach ($candidates as $type => $identifier) {
             $token = null === $identifier ? null : $this->tokenStore->find($type, $identifier);
-            if (null !== $token && $token->getConnection()->getClient()?->getIdentifier() === $clientId) {
+            if ($token instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken && $token->getConnection()->getClient()?->getIdentifier() === $clientId) {
                 $this->tokenStore->revoke($type, $identifier);
             }
         }

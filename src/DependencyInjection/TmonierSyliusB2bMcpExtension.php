@@ -19,16 +19,16 @@ final class TmonierSyliusB2bMcpExtension extends AbstractResourceExtension imple
 
     /** Optional tools: bundle class => services file. */
     public const OPTIONAL_TOOLS = [
-        'Tmonier\SyliusQuickOrderPlugin\TmonierSyliusQuickOrderPlugin' => 'services/quick_order.php',
-        'Tmonier\SyliusQuoteRequestPlugin\TmonierSyliusQuoteRequestPlugin' => 'services/quote_request.php',
-        'Tmonier\SyliusTradeCreditPlugin\TmonierSyliusTradeCreditPlugin' => 'services/trade_credit.php',
-        'Tmonier\SyliusCompanyAccountsPlugin\TmonierSyliusCompanyAccountsPlugin' => 'services/company_accounts.php',
+        \Tmonier\SyliusQuickOrderPlugin\TmonierSyliusQuickOrderPlugin::class => 'services/quick_order.php',
+        \Tmonier\SyliusQuoteRequestPlugin\TmonierSyliusQuoteRequestPlugin::class => 'services/quote_request.php',
+        \Tmonier\SyliusTradeCreditPlugin\TmonierSyliusTradeCreditPlugin::class => 'services/trade_credit.php',
+        \Tmonier\SyliusCompanyAccountsPlugin\TmonierSyliusCompanyAccountsPlugin::class => 'services/company_accounts.php',
         self::PURCHASE_APPROVAL_BUNDLE => 'services/purchase_approval.php',
     ];
 
-    public const PURCHASE_APPROVAL_BUNDLE = 'Tmonier\SyliusPurchaseApprovalPlugin\TmonierSyliusPurchaseApprovalPlugin';
+    public const PURCHASE_APPROVAL_BUNDLE = \Tmonier\SyliusPurchaseApprovalPlugin\TmonierSyliusPurchaseApprovalPlugin::class;
 
-    public const AUDIT_LOG_BUNDLE = 'Tmonier\SyliusAuditLogPlugin\TmonierSyliusAuditLogPlugin';
+    public const AUDIT_LOG_BUNDLE = \Tmonier\SyliusAuditLogPlugin\TmonierSyliusAuditLogPlugin::class;
 
     public function load(array $configs, ContainerBuilder $container): void
     {

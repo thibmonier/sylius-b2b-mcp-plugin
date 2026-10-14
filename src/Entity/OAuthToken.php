@@ -18,18 +18,18 @@ class OAuthToken
 
     protected ?int $id = null;
 
-    private \DateTimeImmutable $createdAt;
+    private readonly \DateTimeImmutable $createdAt;
 
     private ?\DateTimeImmutable $revokedAt = null;
 
     /** @param list<string> $scopes */
     public function __construct(
-        private string $type,
-        private string $identifierHash,
-        private ConnectionInterface $connection,
-        private array $scopes,
-        private \DateTimeImmutable $expiresAt,
-        private ?string $parentHash = null,
+        private readonly string $type,
+        private readonly string $identifierHash,
+        private readonly ConnectionInterface $connection,
+        private readonly array $scopes,
+        private readonly \DateTimeImmutable $expiresAt,
+        private readonly ?string $parentHash = null,
     ) {
         $this->createdAt = new \DateTimeImmutable();
     }
@@ -93,6 +93,6 @@ class OAuthToken
 
     public function isUsableAt(\DateTimeImmutable $now): bool
     {
-        return null === $this->revokedAt && $this->expiresAt > $now && $this->connection->isActive();
+        return !$this->revokedAt instanceof \DateTimeImmutable && $this->expiresAt > $now && $this->connection->isActive();
     }
 }

@@ -10,16 +10,16 @@ use Tmonier\SyliusB2bMcpPlugin\Order\Text;
 use Tmonier\SyliusPurchaseApprovalPlugin\Repository\OrderApprovalRepositoryInterface;
 
 /** The approval of an order the caller may already see (get_order checked the access). */
-final class PurchaseApprovalStatus implements OrderApprovalStatusInterface
+final readonly class PurchaseApprovalStatus implements OrderApprovalStatusInterface
 {
-    public function __construct(private readonly OrderApprovalRepositoryInterface $approvalRepository)
+    public function __construct(private OrderApprovalRepositoryInterface $approvalRepository)
     {
     }
 
     public function forOrder(OrderInterface $order): ?array
     {
         $approval = $this->approvalRepository->findOneByOrder($order);
-        if (null === $approval) {
+        if (!$approval instanceof \Tmonier\SyliusPurchaseApprovalPlugin\Entity\OrderApprovalInterface) {
             return null;
         }
         $limit = $approval->getOrderLimit();

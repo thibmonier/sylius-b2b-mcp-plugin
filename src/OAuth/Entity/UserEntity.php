@@ -7,10 +7,10 @@ namespace Tmonier\SyliusB2bMcpPlugin\OAuth\Entity;
 use League\OAuth2\Server\Entities\UserEntityInterface;
 
 /** The "user" of the tokens is the connection (customer, assistant, channel) approved by the customer. */
-final class UserEntity implements UserEntityInterface
+final readonly class UserEntity implements UserEntityInterface
 {
     /** @param non-empty-string $connectionId */
-    public function __construct(private readonly string $connectionId)
+    public function __construct(private string $connectionId)
     {
     }
 

@@ -21,15 +21,15 @@ use Tmonier\SyliusB2bMcpPlugin\Repository\ConnectionRepository;
 use Twig\Environment;
 
 /** "AI assistants" page of the shop account: the connected assistants, and their disconnection. */
-final class ConnectionController
+final readonly class ConnectionController
 {
     public function __construct(
-        private readonly ConnectionRepository $connectionRepository,
-        private readonly ConnectionManager $connectionManager,
-        private readonly Security $security,
-        private readonly CsrfTokenManagerInterface $csrfTokenManager,
-        private readonly UrlGeneratorInterface $urlGenerator,
-        private readonly Environment $twig,
+        private ConnectionRepository $connectionRepository,
+        private ConnectionManager $connectionManager,
+        private Security $security,
+        private CsrfTokenManagerInterface $csrfTokenManager,
+        private UrlGeneratorInterface $urlGenerator,
+        private Environment $twig,
     ) {
     }
 
@@ -40,11 +40,11 @@ final class ConnectionController
         ]));
     }
 
-    public function revokeAction(Request $request, int $id): Response
+    public function revokeAction(Request $request, int $id): \Symfony\Component\HttpFoundation\RedirectResponse
     {
         $customer = $this->customer();
         $connection = $this->connectionRepository->findOneById($id);
-        if (null === $connection || null === $customer->getId() || $connection->getCustomer()?->getId() !== $customer->getId()) {
+        if (!$connection instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface || null === $customer->getId() || $connection->getCustomer()?->getId() !== $customer->getId()) {
             throw new NotFoundHttpException();
         }
         if (!$this->csrfTokenManager->isTokenValid(new CsrfToken('tmonier_b2b_mcp_revoke_' . $id, (string) $request->request->get('_csrf_token')))) {

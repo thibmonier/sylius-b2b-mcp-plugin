@@ -32,20 +32,20 @@ use Twig\Environment;
  * creates or updates the connection of the assistant on this channel and redirects back to the
  * assistant with an authorization code.
  */
-final class ConsentController
+final readonly class ConsentController
 {
     public const CSRF_TOKEN_ID = 'tmonier_b2b_mcp_consent';
 
     public function __construct(
-        private readonly AuthorizationRequestValidator $validator,
-        private readonly AuthorizationServer $authorizationServer,
-        private readonly ConnectionManager $connectionManager,
-        private readonly PsrBridge $psrBridge,
-        private readonly Security $security,
-        private readonly ChannelContextInterface $channelContext,
-        private readonly CsrfTokenManagerInterface $csrfTokenManager,
-        private readonly Environment $twig,
-        private readonly ScopeCatalog $scopeCatalog,
+        private AuthorizationRequestValidator $validator,
+        private AuthorizationServer $authorizationServer,
+        private ConnectionManager $connectionManager,
+        private PsrBridge $psrBridge,
+        private Security $security,
+        private ChannelContextInterface $channelContext,
+        private CsrfTokenManagerInterface $csrfTokenManager,
+        private Environment $twig,
+        private ScopeCatalog $scopeCatalog,
     ) {
     }
 

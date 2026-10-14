@@ -17,21 +17,21 @@ use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
 use Sylius\Resource\Factory\FactoryInterface;
 
 /** Core Sylius rules (no quick order plugin): enabled, sold in the channel, priced, in stock, quantity limit. */
-final class CoreCartLinesAdder implements CartLinesAdderInterface
+final readonly class CoreCartLinesAdder implements CartLinesAdderInterface
 {
     /**
      * @param RepositoryInterface<ProductVariantInterface> $variantRepository
      * @param FactoryInterface<OrderItemInterface> $cartItemFactory
      */
     public function __construct(
-        private readonly RepositoryInterface $variantRepository,
-        private readonly AvailabilityCheckerInterface $availabilityChecker,
-        private readonly FactoryInterface $cartItemFactory,
-        private readonly OrderItemQuantityModifierInterface $quantityModifier,
-        private readonly OrderProcessorInterface $orderProcessor,
-        private readonly ObjectManager $orderManager,
-        private readonly CartLockChecker $lockChecker,
-        private readonly int $quantityLimit,
+        private RepositoryInterface $variantRepository,
+        private AvailabilityCheckerInterface $availabilityChecker,
+        private FactoryInterface $cartItemFactory,
+        private OrderItemQuantityModifierInterface $quantityModifier,
+        private OrderProcessorInterface $orderProcessor,
+        private ObjectManager $orderManager,
+        private CartLockChecker $lockChecker,
+        private int $quantityLimit,
     ) {
     }
 
@@ -58,10 +58,10 @@ final class CoreCartLinesAdder implements CartLinesAdderInterface
             return new CartAddResult(array_map(static fn (array $check): CartLineResult => null === $check[1] ? $check[0] : self::with($check[0], CartLineResult::SKIPPED), $checks), false);
         }
 
-        $before = self::quantities($cart);
+        $before = $this->quantities($cart);
         foreach ($valid as [$line, $variant]) {
-            $existing = self::findItem($cart, $variant);
-            if (null !== $existing) {
+            $existing = $this->findItem($cart, $variant);
+            if ($existing instanceof \Sylius\Component\Core\Model\OrderItemInterface) {
                 $this->quantityModifier->modify($existing, $existing->getQuantity() + $line->requestedQuantity);
 
                 continue;
@@ -73,7 +73,7 @@ final class CoreCartLinesAdder implements CartLinesAdderInterface
         }
 
         $this->orderProcessor->process($cart);
-        $after = self::quantities($cart);
+        $after = $this->quantities($cart);
 
         $results = [];
         foreach ($checks as [$line, $variant]) {
@@ -105,9 +105,9 @@ final class CoreCartLinesAdder implements CartLinesAdderInterface
     private function check(OrderInterface $cart, array $lines): array
     {
         $channel = $cart->getChannel();
-        $inCart = self::quantities($cart);
+        $inCart = $this->quantities($cart);
         $checks = [];
-        foreach (self::merge($lines) as $line) {
+        foreach ($this->merge($lines) as $line) {
             $variant = $this->variantRepository->findOneBy(['code' => $line->code]);
             if (!$variant instanceof ProductVariantInterface) {
                 $checks[] = [new CartLineResult($line->code, $line->quantity, CartLineResult::UNKNOWN_CODE), null];
@@ -120,9 +120,9 @@ final class CoreCartLinesAdder implements CartLinesAdderInterface
 
             $status = match (true) {
                 $line->quantity < 1 => CartLineResult::INVALID_QUANTITY,
-                !$variant->isEnabled() || null === $product || !$product->isEnabled() => CartLineResult::DISABLED,
+                !$variant->isEnabled() || !$product instanceof \Sylius\Component\Product\Model\ProductInterface || !$product->isEnabled() => CartLineResult::DISABLED,
                 !$channel instanceof ChannelInterface || !$product instanceof ProductInterface || !$product->hasChannel($channel) => CartLineResult::NOT_IN_CHANNEL,
-                null === $variant->getChannelPricingForChannel($channel) => CartLineResult::NO_CHANNEL_PRICING,
+                !$variant->getChannelPricingForChannel($channel) instanceof \Sylius\Component\Core\Model\ChannelPricingInterface => CartLineResult::NO_CHANNEL_PRICING,
                 $total > $this->quantityLimit => CartLineResult::QUANTITY_LIMIT_EXCEEDED,
                 !$this->availabilityChecker->isStockSufficient($variant, $total) => CartLineResult::INSUFFICIENT_STOCK,
                 default => CartLineResult::VALID,
@@ -141,7 +141,7 @@ final class CoreCartLinesAdder implements CartLinesAdderInterface
      *
      * @return list<CartLine>
      */
-    private static function merge(array $lines): array
+    private function merge(array $lines): array
     {
         $merged = [];
         foreach ($lines as $line) {
@@ -153,7 +153,7 @@ final class CoreCartLinesAdder implements CartLinesAdderInterface
     }
 
     /** @return array<string, int> quantity by variant code */
-    private static function quantities(OrderInterface $cart): array
+    private function quantities(OrderInterface $cart): array
     {
         $quantities = [];
         foreach ($cart->getItems() as $item) {
@@ -167,7 +167,7 @@ final class CoreCartLinesAdder implements CartLinesAdderInterface
         return $quantities;
     }
 
-    private static function findItem(OrderInterface $cart, ProductVariantInterface $variant): ?OrderItemInterface
+    private function findItem(OrderInterface $cart, ProductVariantInterface $variant): ?OrderItemInterface
     {
         foreach ($cart->getItems() as $item) {
             /** @var OrderItemInterface $item */

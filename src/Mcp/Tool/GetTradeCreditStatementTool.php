@@ -17,7 +17,7 @@ use Tmonier\SyliusTradeCreditPlugin\Statement\StatementBuilder;
 use Tmonier\SyliusTradeCreditPlugin\Statement\StatementItem;
 
 /** Trade credit statement (tmonier/sylius-trade-credit-plugin), as on the shop account page. */
-final class GetTradeCreditStatementTool implements B2bToolInterface
+final readonly class GetTradeCreditStatementTool implements B2bToolInterface
 {
     public const NAME = 'get_trade_credit_statement';
 
@@ -25,9 +25,9 @@ final class GetTradeCreditStatementTool implements B2bToolInterface
     private const AGEING = ['overdue_1_30' => 30, 'overdue_31_60' => 60, 'overdue_61_90' => 90];
 
     public function __construct(
-        private readonly ToolRunner $runner,
-        private readonly StatementBuilder $statementBuilder,
-        private readonly ClockInterface $clock,
+        private ToolRunner $runner,
+        private StatementBuilder $statementBuilder,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -46,7 +46,7 @@ final class GetTradeCreditStatementTool implements B2bToolInterface
     {
         return $this->runner->run(self::NAME, Scopes::READ, [], function (AuthenticatedConnection $connection): array {
             $statement = $this->statementBuilder->forCustomer($connection->customer);
-            if (null === $statement) {
+            if (!$statement instanceof \Tmonier\SyliusTradeCreditPlugin\Statement\Statement) {
                 throw new ToolRefusal('No trade credit account: payment on account is not available for you on this shop.');
             }
             $account = $statement->account;
@@ -54,7 +54,7 @@ final class GetTradeCreditStatementTool implements B2bToolInterface
 
             $ageing = ['not_due' => 0, 'overdue_1_30' => 0, 'overdue_31_60' => 0, 'overdue_61_90' => 0, 'overdue_over_90' => 0];
             foreach ($statement->items as $item) {
-                $ageing[self::bucket($item, $today)] += $item->amount;
+                $ageing[$this->bucket($item, $today)] += $item->amount;
             }
 
             return [
@@ -78,7 +78,7 @@ final class GetTradeCreditStatementTool implements B2bToolInterface
         });
     }
 
-    private static function bucket(StatementItem $item, \DateTimeImmutable $today): string
+    private function bucket(StatementItem $item, \DateTimeImmutable $today): string
     {
         $dueDate = $item->dueDate->setTime(0, 0);
         if (!$item->overdue && $dueDate >= $today) {

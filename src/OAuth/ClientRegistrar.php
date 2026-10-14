@@ -8,7 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Tmonier\SyliusB2bMcpPlugin\Entity\OAuthClient;
 
 /** Registers OAuth clients (RFC 7591 metadata, or the console command). */
-final class ClientRegistrar
+final readonly class ClientRegistrar
 {
     public const AUTH_METHOD_NONE = 'none';
 
@@ -17,8 +17,8 @@ final class ClientRegistrar
     private const MAX_REDIRECT_URIS = 5;
 
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly RedirectUriPolicy $redirectUriPolicy,
+        private EntityManagerInterface $entityManager,
+        private RedirectUriPolicy $redirectUriPolicy,
     ) {
     }
 
@@ -47,11 +47,11 @@ final class ClientRegistrar
             throw new ClientRegistrationException('invalid_client_metadata', 'Supported token endpoint authentication methods: ' . implode(', ', self::AUTH_METHODS) . '.');
         }
         $grantTypes = $metadata['grant_types'] ?? ['authorization_code'];
-        if (!self::isSubsetOf($grantTypes, ['authorization_code', 'refresh_token'])) {
+        if (!$this->isSubsetOf($grantTypes, ['authorization_code', 'refresh_token'])) {
             throw new ClientRegistrationException('invalid_client_metadata', 'Supported grant types: authorization_code, refresh_token.');
         }
         $responseTypes = $metadata['response_types'] ?? ['code'];
-        if (!self::isSubsetOf($responseTypes, ['code'])) {
+        if (!$this->isSubsetOf($responseTypes, ['code'])) {
             throw new ClientRegistrationException('invalid_client_metadata', 'Supported response types: code.');
         }
         $name = $metadata['client_name'] ?? null;
@@ -72,7 +72,7 @@ final class ClientRegistrar
     }
 
     /** @param list<string> $supported */
-    private static function isSubsetOf(mixed $values, array $supported): bool
+    private function isSubsetOf(mixed $values, array $supported): bool
     {
         if (!\is_array($values)) {
             return false;

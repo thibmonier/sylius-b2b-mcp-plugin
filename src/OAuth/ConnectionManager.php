@@ -14,15 +14,15 @@ use Tmonier\SyliusB2bMcpPlugin\Entity\OAuthClient;
 use Tmonier\SyliusB2bMcpPlugin\Repository\ConnectionRepository;
 
 /** Consent of a customer to an assistant, and its revocation. */
-final class ConnectionManager
+final readonly class ConnectionManager
 {
     /** @param FactoryInterface<ConnectionInterface> $connectionFactory */
     public function __construct(
-        private readonly ConnectionRepository $connectionRepository,
-        private readonly FactoryInterface $connectionFactory,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly TokenStore $tokenStore,
-        private readonly AuditMirrorInterface $mirror = new NullAuditMirror(),
+        private ConnectionRepository $connectionRepository,
+        private FactoryInterface $connectionFactory,
+        private EntityManagerInterface $entityManager,
+        private TokenStore $tokenStore,
+        private AuditMirrorInterface $mirror = new NullAuditMirror(),
     ) {
     }
 
@@ -36,7 +36,7 @@ final class ConnectionManager
     public function approve(CustomerInterface $customer, OAuthClient $client, string $channelCode, array $scopes): ConnectionInterface
     {
         $connection = $this->connectionRepository->findActive($customer, $client, $channelCode);
-        if (null === $connection) {
+        if (!$connection instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface) {
             $connection = $this->connectionFactory->createNew();
             $connection->setCustomer($customer);
             $connection->setClient($client);
