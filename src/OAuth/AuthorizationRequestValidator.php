@@ -15,13 +15,13 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\Entity\ClientEntity;
  * authorization spec that the library leaves optional: PKCE with S256 for every client, redirect
  * URI still allowed by the shop, and the resource indicator (RFC 8707) naming this MCP endpoint.
  */
-final class AuthorizationRequestValidator
+final readonly class AuthorizationRequestValidator
 {
     public function __construct(
-        private readonly AuthorizationServer $authorizationServer,
-        private readonly PsrBridge $psrBridge,
-        private readonly RedirectUriPolicy $redirectUriPolicy,
-        private readonly McpEndpoint $endpoint,
+        private AuthorizationServer $authorizationServer,
+        private PsrBridge $psrBridge,
+        private RedirectUriPolicy $redirectUriPolicy,
+        private McpEndpoint $endpoint,
     ) {
     }
 

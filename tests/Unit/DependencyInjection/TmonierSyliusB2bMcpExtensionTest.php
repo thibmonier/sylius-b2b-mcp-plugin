@@ -72,7 +72,7 @@ final class TmonierSyliusB2bMcpExtensionTest extends TestCase
 
     public function testTheTradeCreditToolAloneIsRegisteredWithItsPlugin(): void
     {
-        $container = $this->load(['Tmonier\SyliusTradeCreditPlugin\TmonierSyliusTradeCreditPlugin']);
+        $container = $this->load([\Tmonier\SyliusTradeCreditPlugin\TmonierSyliusTradeCreditPlugin::class]);
 
         self::assertContains(GetTradeCreditStatementTool::class, $this->tools($container));
         self::assertNotContains(QuickOrderAddTool::class, $this->tools($container));

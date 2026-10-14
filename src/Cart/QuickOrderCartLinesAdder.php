@@ -12,22 +12,22 @@ use Tmonier\SyliusQuickOrderPlugin\Adder\LineResult;
 use Tmonier\SyliusQuickOrderPlugin\Input\LineCollector;
 
 /** Same validation and pack-size rounding as the quick order page (tmonier/sylius-quick-order-plugin). */
-final class QuickOrderCartLinesAdder implements CartLinesAdderInterface
+final readonly class QuickOrderCartLinesAdder implements CartLinesAdderInterface
 {
     public function __construct(
-        private readonly BulkCartAdderInterface $bulkCartAdder,
-        private readonly int $maxLines,
+        private BulkCartAdderInterface $bulkCartAdder,
+        private int $maxLines,
     ) {
     }
 
     public function preview(OrderInterface $cart, array $lines): CartAddResult
     {
-        return self::convert($this->bulkCartAdder->validate($cart, $this->input($lines)));
+        return $this->convert($this->bulkCartAdder->validate($cart, $this->input($lines)));
     }
 
     public function add(OrderInterface $cart, array $lines, bool $allOrNothing = false): CartAddResult
     {
-        return self::convert($this->bulkCartAdder->add($cart, $this->input($lines), $allOrNothing ? BulkAddMode::AllOrNothing : BulkAddMode::Partial));
+        return $this->convert($this->bulkCartAdder->add($cart, $this->input($lines), $allOrNothing ? BulkAddMode::AllOrNothing : BulkAddMode::Partial));
     }
 
     /** @param list<CartLine> $lines */
@@ -41,7 +41,7 @@ final class QuickOrderCartLinesAdder implements CartLinesAdderInterface
         return $collector->getInput();
     }
 
-    private static function convert(BulkAddResult $result): CartAddResult
+    private function convert(BulkAddResult $result): CartAddResult
     {
         return new CartAddResult(
             array_map(static fn (LineResult $line): CartLineResult => new CartLineResult(

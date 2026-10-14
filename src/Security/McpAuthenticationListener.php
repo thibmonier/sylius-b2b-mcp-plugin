@@ -33,21 +33,21 @@ use Tmonier\SyliusB2bMcpPlugin\RateLimit\RateLimiter;
  *   user becomes the security token of the request, so that the Sylius and plugin voters apply,
  *   and the firewall is told not to store it in a session (stateless).
  */
-final class McpAuthenticationListener
+final readonly class McpAuthenticationListener
 {
     public const FIREWALL_NAME = 'tmonier_b2b_mcp';
 
     private const LAST_USED_RESOLUTION = 'PT5M';
 
     public function __construct(
-        private readonly TokenStore $tokenStore,
-        private readonly ChannelContextInterface $channelContext,
-        private readonly McpEndpoint $endpoint,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly RateLimiter $rateLimiter,
-        private readonly TokenStorageInterface $tokenStorage,
-        private readonly ScopeCatalog $scopeCatalog,
-        private readonly ?ApproveScopeGuard $approveScopeGuard = null,
+        private TokenStore $tokenStore,
+        private ChannelContextInterface $channelContext,
+        private McpEndpoint $endpoint,
+        private EntityManagerInterface $entityManager,
+        private RateLimiter $rateLimiter,
+        private TokenStorageInterface $tokenStorage,
+        private ScopeCatalog $scopeCatalog,
+        private ?ApproveScopeGuard $approveScopeGuard = null,
     ) {
     }
 
@@ -68,14 +68,14 @@ final class McpAuthenticationListener
         }
 
         $connection = $this->resolve($matches[1]);
-        if (null === $connection) {
+        if (!$connection instanceof \Tmonier\SyliusB2bMcpPlugin\Security\AuthenticatedConnection) {
             $event->setResponse($this->unauthorized($request, 'invalid_token'));
 
             return;
         }
 
         $limited = $this->rateLimiter->consumeMcpRequest('connection-' . $connection->connection->getId());
-        if (null !== $limited) {
+        if ($limited instanceof \Symfony\Component\HttpFoundation\Response) {
             $event->setResponse($limited);
 
             return;
@@ -113,7 +113,7 @@ final class McpAuthenticationListener
         }
 
         if (
-            null === $token || null === $connection || !$customer instanceof CustomerInterface ||
+            !$token instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken || !$connection instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface || !$customer instanceof CustomerInterface ||
             !$user instanceof ShopUserInterface || !$user->isEnabled() ||
             !$channel instanceof ChannelInterface || $connection->getChannelCode() !== $channel->getCode()
         ) {
@@ -133,13 +133,13 @@ final class McpAuthenticationListener
     {
         $now = $this->tokenStore->now();
         $lastUsedAt = $connection->connection->getLastUsedAt();
-        if (null === $lastUsedAt || $lastUsedAt < $now->sub(new \DateInterval(self::LAST_USED_RESOLUTION))) {
+        if (!$lastUsedAt instanceof \DateTimeImmutable || $lastUsedAt < $now->sub(new \DateInterval(self::LAST_USED_RESOLUTION))) {
             $connection->connection->setLastUsedAt($now);
             $this->entityManager->flush();
         }
     }
 
-    private function unauthorized(Request $request, ?string $error): Response
+    private function unauthorized(Request $request, ?string $error): \Symfony\Component\HttpFoundation\JsonResponse
     {
         $challenge = \sprintf('Bearer resource_metadata="%s", scope="%s"', $this->endpoint->getResourceMetadataUrl($request), implode(' ', $this->scopeCatalog->supported()));
         if (null !== $error) {

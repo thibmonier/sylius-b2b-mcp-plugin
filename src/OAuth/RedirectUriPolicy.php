@@ -9,12 +9,12 @@ namespace Tmonier\SyliusB2bMcpPlugin\OAuth;
  * create a client: restricting the redirect URIs to the known assistants keeps a phishing client
  * from receiving the authorization codes of customers.
  */
-final class RedirectUriPolicy
+final readonly class RedirectUriPolicy
 {
     /** @param list<string> $allowedUris exact URIs, or ending with "*" for one path segment */
     public function __construct(
-        private readonly array $allowedUris,
-        private readonly bool $allowLoopback,
+        private array $allowedUris,
+        private bool $allowLoopback,
     ) {
     }
 

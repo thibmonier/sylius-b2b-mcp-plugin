@@ -6,10 +6,10 @@ namespace Tmonier\SyliusB2bMcpPlugin\OAuth\Entity;
 
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
 
-final class ScopeEntity implements ScopeEntityInterface
+final readonly class ScopeEntity implements ScopeEntityInterface
 {
     /** @param non-empty-string $identifier */
-    public function __construct(private readonly string $identifier)
+    public function __construct(private string $identifier)
     {
     }
 

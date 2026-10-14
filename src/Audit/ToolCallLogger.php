@@ -10,7 +10,7 @@ use Tmonier\SyliusB2bMcpPlugin\Entity\ToolCall;
 use Tmonier\SyliusB2bMcpPlugin\Security\AuthenticatedConnection;
 
 /** Audit log of the B2B tool calls (who, which assistant, which tool, arguments, outcome). */
-final class ToolCallLogger
+final readonly class ToolCallLogger
 {
     private const MAX_ARGUMENTS_LENGTH = 2000;
 
@@ -18,9 +18,9 @@ final class ToolCallLogger
     private const FREE_TEXT_ARGUMENTS = ['message', 'comment'];
 
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly LoggerInterface $logger,
-        private readonly AuditMirrorInterface $mirror = new NullAuditMirror(),
+        private EntityManagerInterface $entityManager,
+        private LoggerInterface $logger,
+        private AuditMirrorInterface $mirror = new NullAuditMirror(),
     ) {
     }
 

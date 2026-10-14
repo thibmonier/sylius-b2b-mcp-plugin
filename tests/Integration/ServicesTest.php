@@ -50,7 +50,7 @@ final class ServicesTest extends WebTestCase
     {
         $store = $this->service('tmonier_b2b_mcp.idempotency_store');
         self::assertInstanceOf(IdempotencyStore::class, $store);
-        $customerId = self::idOf($this->customer());
+        $customerId = $this->idOf($this->customer());
 
         self::assertNull($store->claim($customerId, 'reorder', 'key-00001', ['order_number' => '1']));
 
@@ -65,7 +65,7 @@ final class ServicesTest extends WebTestCase
         self::assertSame(['applied' => true], $store->claim($customerId, 'reorder', 'key-00001', ['order_number' => '1']));
         // Keys are scoped by customer and tool.
         self::assertNull($store->claim($customerId, 'request_quote', 'key-00001', ['order_number' => '1']));
-        self::assertNull($store->claim(self::idOf($this->customer('Eve', 'Other')), 'reorder', 'key-00001', ['order_number' => '1']));
+        self::assertNull($store->claim($this->idOf($this->customer('Eve', 'Other')), 'reorder', 'key-00001', ['order_number' => '1']));
 
         // A failed call releases its key.
         self::assertNull($store->claim($customerId, 'reorder', 'key-00002', []));
@@ -123,7 +123,7 @@ final class ServicesTest extends WebTestCase
         self::assertStringStartsWith('$', $hash, 'Only a hash of the secret is stored.');
     }
 
-    private static function idOf(\Sylius\Component\Core\Model\CustomerInterface $customer): int
+    private function idOf(\Sylius\Component\Core\Model\CustomerInterface $customer): int
     {
         $id = $customer->getId();
         self::assertIsInt($id);

@@ -17,16 +17,16 @@ use Tmonier\SyliusQuoteRequestPlugin\Entity\QuoteRequestLineInterface;
 use Tmonier\SyliusQuoteRequestPlugin\Repository\QuoteRequestRepositoryInterface;
 use Tmonier\SyliusQuoteRequestPlugin\Workflow\QuoteRequestStatuses;
 
-final class ListMyQuotesTool implements B2bToolInterface
+final readonly class ListMyQuotesTool implements B2bToolInterface
 {
     public const NAME = 'list_my_quotes';
 
     private const MAX_QUOTES = 50;
 
     public function __construct(
-        private readonly ToolRunner $runner,
-        private readonly QuoteRequestRepositoryInterface $quoteRequestRepository,
-        private readonly ShopUrlGenerator $urlGenerator,
+        private ToolRunner $runner,
+        private QuoteRequestRepositoryInterface $quoteRequestRepository,
+        private ShopUrlGenerator $urlGenerator,
     ) {
     }
 

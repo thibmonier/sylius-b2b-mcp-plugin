@@ -9,11 +9,11 @@ use League\OAuth2\Server\Repositories\ClientRepositoryInterface;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Entity\ClientEntity;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
 
-final class ClientRepository implements ClientRepositoryInterface
+final readonly class ClientRepository implements ClientRepositoryInterface
 {
     public const GRANT_TYPES = ['authorization_code', 'refresh_token'];
 
-    public function __construct(private readonly TokenStore $store)
+    public function __construct(private TokenStore $store)
     {
     }
 
@@ -21,13 +21,13 @@ final class ClientRepository implements ClientRepositoryInterface
     {
         $client = $this->store->findClient($clientIdentifier);
 
-        return null === $client ? null : new ClientEntity($client);
+        return $client instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\OAuthClient ? new ClientEntity($client) : null;
     }
 
     public function validateClient(string $clientIdentifier, ?string $clientSecret, ?string $grantType): bool
     {
         $client = $this->store->findClient($clientIdentifier);
-        if (null === $client || (null !== $grantType && !\in_array($grantType, self::GRANT_TYPES, true))) {
+        if (!$client instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\OAuthClient || (null !== $grantType && !\in_array($grantType, self::GRANT_TYPES, true))) {
             return false;
         }
 

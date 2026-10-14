@@ -10,15 +10,15 @@ use Sylius\Component\Core\Model\ShopUserInterface;
 use Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface;
 
 /** The customer behind the bearer token of the current MCP request, on the channel of the request. */
-final class AuthenticatedConnection
+final readonly class AuthenticatedConnection
 {
     /** @param list<string> $scopes scopes of the access token */
     public function __construct(
-        public readonly ConnectionInterface $connection,
-        public readonly ShopUserInterface $shopUser,
-        public readonly CustomerInterface $customer,
-        public readonly ChannelInterface $channel,
-        public readonly array $scopes,
+        public ConnectionInterface $connection,
+        public ShopUserInterface $shopUser,
+        public CustomerInterface $customer,
+        public ChannelInterface $channel,
+        public array $scopes,
     ) {
     }
 

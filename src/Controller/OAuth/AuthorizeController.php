@@ -18,21 +18,21 @@ use Tmonier\SyliusB2bMcpPlugin\RateLimit\RateLimiter;
  * Authorization endpoint advertised in the metadata: checks the request, then sends the browser
  * to the consent page of the shop account (localized, behind the shop login).
  */
-final class AuthorizeController
+final readonly class AuthorizeController
 {
     public function __construct(
-        private readonly AuthorizationRequestValidator $validator,
-        private readonly PsrBridge $psrBridge,
-        private readonly RateLimiter $rateLimiter,
-        private readonly LocaleContextInterface $localeContext,
-        private readonly UrlGeneratorInterface $urlGenerator,
+        private AuthorizationRequestValidator $validator,
+        private PsrBridge $psrBridge,
+        private RateLimiter $rateLimiter,
+        private LocaleContextInterface $localeContext,
+        private UrlGeneratorInterface $urlGenerator,
     ) {
     }
 
     public function __invoke(Request $request): Response
     {
         $limited = $this->rateLimiter->consumeOAuthRequest($request->getClientIp());
-        if (null !== $limited) {
+        if ($limited instanceof \Symfony\Component\HttpFoundation\Response) {
             return $limited;
         }
 

@@ -25,7 +25,7 @@ use Tmonier\SyliusPurchaseApprovalPlugin\Security\ApprovalPermissions;
  * the shop page: approver of the order's company, no self-approval, approval limit, order still new.
  * Opt-in (approvals.allow_decisions) and behind the b2b:approve scope.
  */
-final class DecideApprovalTool implements B2bToolInterface
+final readonly class DecideApprovalTool implements B2bToolInterface
 {
     public const NAME = 'decide_approval';
 
@@ -34,12 +34,12 @@ final class DecideApprovalTool implements B2bToolInterface
     public const REJECT = 'reject';
 
     public function __construct(
-        private readonly ToolRunner $runner,
-        private readonly CurrentMemberResolverInterface $memberResolver,
-        private readonly OrderApprovalRepositoryInterface $approvalRepository,
-        private readonly ApprovalDecisionMaker $decisionMaker,
-        private readonly AuthorizationCheckerInterface $authorizationChecker,
-        private readonly TranslatorInterface $translator,
+        private ToolRunner $runner,
+        private CurrentMemberResolverInterface $memberResolver,
+        private OrderApprovalRepositoryInterface $approvalRepository,
+        private ApprovalDecisionMaker $decisionMaker,
+        private AuthorizationCheckerInterface $authorizationChecker,
+        private TranslatorInterface $translator,
     ) {
     }
 
@@ -77,9 +77,9 @@ final class DecideApprovalTool implements B2bToolInterface
             $member = $this->memberResolver->getMember();
             $company = $member?->getCompany();
             $number = ltrim(trim($order_number), '#');
-            $approval = null === $company || '' === $number ? null : $this->approvalRepository->findOneByOrderNumberAndCompany($number, $company);
+            $approval = !$company instanceof \Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface || '' === $number ? null : $this->approvalRepository->findOneByOrderNumberAndCompany($number, $company);
             if (
-                null === $member || null === $approval ||
+                !$member instanceof \Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface || !$approval instanceof \Tmonier\SyliusPurchaseApprovalPlugin\Entity\OrderApprovalInterface ||
                 $approval->getOrder()?->getChannel()?->getCode() !== $connection->channel->getCode() ||
                 !$this->authorizationChecker->isGranted(ApprovalPermissions::APPROVAL_DECIDE, $approval)
             ) {

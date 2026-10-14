@@ -21,12 +21,12 @@ use Mcp\Schema\Tool;
  * "hidden_official_tools" (by default its guest cart and checkout tools: the B2B tools hand the
  * checkout over to the shop instead).
  */
-final class HiddenToolsRegistry implements RegistryInterface
+final readonly class HiddenToolsRegistry implements RegistryInterface
 {
     /** @param list<string> $hiddenTools */
     public function __construct(
-        private readonly RegistryInterface $registry,
-        private readonly array $hiddenTools,
+        private RegistryInterface $registry,
+        private array $hiddenTools,
     ) {
     }
 

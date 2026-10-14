@@ -9,12 +9,12 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 
 /** The limiters of the plugin (framework.rate_limiter, prepended by the extension). */
-final class RateLimiter
+final readonly class RateLimiter
 {
     public function __construct(
-        private readonly RateLimiterFactory $mcpRequests,
-        private readonly RateLimiterFactory $oauthRequests,
-        private readonly RateLimiterFactory $clientRegistrations,
+        private RateLimiterFactory $mcpRequests,
+        private RateLimiterFactory $oauthRequests,
+        private RateLimiterFactory $clientRegistrations,
     ) {
     }
 
@@ -54,7 +54,7 @@ final class RateLimiter
             return (string) inet_ntop(substr($packed, 12));
         }
 
-        return (string) inet_ntop(substr($packed, 0, 7) . str_repeat("\0", 9)) . '/56';
+        return inet_ntop(substr($packed, 0, 7) . str_repeat("\0", 9)) . '/56';
     }
 
     private function consume(RateLimiterFactory $factory, string $key): ?Response

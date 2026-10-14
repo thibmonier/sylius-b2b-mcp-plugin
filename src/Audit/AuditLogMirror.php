@@ -21,7 +21,7 @@ use Tmonier\SyliusB2bMcpPlugin\Entity\ToolCallInterface;
  * Recorded whatever its "sources" setting (customer actions are not recorded by default there):
  * these are security events the merchant asked to mirror.
  */
-final class AuditLogMirror implements AuditMirrorInterface
+final readonly class AuditLogMirror implements AuditMirrorInterface
 {
     public const RESOURCE_TOOL_CALL = 'mcp_tool_call';
 
@@ -29,12 +29,12 @@ final class AuditLogMirror implements AuditMirrorInterface
 
     /** @param FactoryInterface<AuditLogEntryInterface> $entryFactory */
     public function __construct(
-        private readonly FactoryInterface $entryFactory,
-        private readonly AuditLogWriter $writer,
-        private readonly AuditContextProviderInterface $contextProvider,
-        private readonly EntityManagerInterface $entityManager,
-        private readonly ClockInterface $clock,
-        private readonly LoggerInterface $logger,
+        private FactoryInterface $entryFactory,
+        private AuditLogWriter $writer,
+        private AuditContextProviderInterface $contextProvider,
+        private EntityManagerInterface $entityManager,
+        private ClockInterface $clock,
+        private LoggerInterface $logger,
     ) {
     }
 

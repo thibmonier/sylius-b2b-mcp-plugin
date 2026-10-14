@@ -21,7 +21,7 @@ use Tmonier\SyliusB2bMcpPlugin\Order\Text;
 use Tmonier\SyliusB2bMcpPlugin\Security\AuthenticatedConnection;
 
 /** Quick order by SKU (tmonier/sylius-quick-order-plugin): preview first, then add with confirm=true. */
-final class QuickOrderAddTool implements B2bToolInterface
+final readonly class QuickOrderAddTool implements B2bToolInterface
 {
     public const NAME = 'quick_order_add';
 
@@ -30,13 +30,13 @@ final class QuickOrderAddTool implements B2bToolInterface
     public const MODE_ALL_OR_NOTHING = 'all_or_nothing';
 
     public function __construct(
-        private readonly ToolRunner $runner,
-        private readonly CustomerCartProvider $cartProvider,
-        private readonly CartLinesAdderInterface $adder,
-        private readonly OrderPresenter $presenter,
-        private readonly ShopUrlGenerator $urlGenerator,
-        private readonly int $maxLines,
-        private readonly string $defaultMode,
+        private ToolRunner $runner,
+        private CustomerCartProvider $cartProvider,
+        private CartLinesAdderInterface $adder,
+        private OrderPresenter $presenter,
+        private ShopUrlGenerator $urlGenerator,
+        private int $maxLines,
+        private string $defaultMode,
     ) {
     }
 
@@ -88,7 +88,7 @@ final class QuickOrderAddTool implements B2bToolInterface
             if (!\in_array($mode, [self::MODE_PARTIAL, self::MODE_ALL_OR_NOTHING], true)) {
                 throw new ToolRefusal('mode must be "partial" or "all_or_nothing".');
             }
-            $cartLines = self::lines($lines, $this->maxLines);
+            $cartLines = $this->lines($lines, $this->maxLines);
             $cart = $this->cartProvider->getOrCreate($connection);
             $result = $confirm
                 ? $this->adder->add($cart, $cartLines, self::MODE_ALL_OR_NOTHING === $mode)
@@ -128,7 +128,7 @@ final class QuickOrderAddTool implements B2bToolInterface
      *
      * @return list<CartLine>
      */
-    private static function lines(array $lines, int $maxLines): array
+    private function lines(array $lines, int $maxLines): array
     {
         if ([] === $lines || \count($lines) > $maxLines) {
             throw new ToolRefusal(\sprintf('Send between 1 and %d lines.', $maxLines));

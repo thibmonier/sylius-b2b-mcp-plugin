@@ -8,9 +8,9 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Tmonier\SyliusB2bMcpPlugin\Security\AuthenticatedConnection;
 
 /** Absolute links to the shop pages (the customer signs in there with the same account). */
-final class ShopUrlGenerator
+final readonly class ShopUrlGenerator
 {
-    public function __construct(private readonly UrlGeneratorInterface $urlGenerator)
+    public function __construct(private UrlGeneratorInterface $urlGenerator)
     {
     }
 

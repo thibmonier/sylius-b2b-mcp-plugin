@@ -17,16 +17,16 @@ use Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface;
  * flag avoids repeating it), at cache warmup (deploy of the configuration change) and in
  * `tmonier:b2b-mcp:purge`.
  */
-final class ApproveScopeGuard
+final readonly class ApproveScopeGuard
 {
     private const SWEPT_FLAG = 'tmonier_b2b_mcp.approve_scope_swept';
 
     /** @param class-string<ConnectionInterface> $connectionClass */
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly ScopeCatalog $catalog,
-        private readonly CacheItemPoolInterface $cache,
-        private readonly string $connectionClass,
+        private EntityManagerInterface $entityManager,
+        private ScopeCatalog $catalog,
+        private CacheItemPoolInterface $cache,
+        private string $connectionClass,
     ) {
     }
 

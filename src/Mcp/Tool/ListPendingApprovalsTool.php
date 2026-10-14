@@ -21,19 +21,19 @@ use Tmonier\SyliusPurchaseApprovalPlugin\Repository\OrderApprovalRepositoryInter
 use Tmonier\SyliusPurchaseApprovalPlugin\Security\ApprovalPermissions;
 
 /** Pending purchase approvals of the approver's company (tmonier/sylius-purchase-approval-plugin), read-only. */
-final class ListPendingApprovalsTool implements B2bToolInterface
+final readonly class ListPendingApprovalsTool implements B2bToolInterface
 {
     public const NAME = 'list_pending_approvals';
 
     private const MAX_APPROVALS = 50;
 
     public function __construct(
-        private readonly ToolRunner $runner,
-        private readonly CurrentMemberResolverInterface $memberResolver,
-        private readonly OrderApprovalRepositoryInterface $approvalRepository,
-        private readonly ApprovalPolicy $policy,
-        private readonly AuthorizationCheckerInterface $authorizationChecker,
-        private readonly ClockInterface $clock,
+        private ToolRunner $runner,
+        private CurrentMemberResolverInterface $memberResolver,
+        private OrderApprovalRepositoryInterface $approvalRepository,
+        private ApprovalPolicy $policy,
+        private AuthorizationCheckerInterface $authorizationChecker,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -53,7 +53,7 @@ final class ListPendingApprovalsTool implements B2bToolInterface
         return $this->runner->run(self::NAME, Scopes::READ, [], function (AuthenticatedConnection $connection): array {
             $member = $this->memberResolver->getMember();
             $company = $member?->getCompany();
-            if (null === $member || null === $company || !$this->authorizationChecker->isGranted(ApprovalPermissions::APPROVAL_LIST, $company)) {
+            if (!$member instanceof \Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface || !$company instanceof \Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface || !$this->authorizationChecker->isGranted(ApprovalPermissions::APPROVAL_LIST, $company)) {
                 throw new ToolRefusal('Only the approvers of a company can see its pending approvals.');
             }
 

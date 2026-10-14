@@ -17,9 +17,9 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
  * revokes every token of the connection (token theft: the legitimate client and the thief
  * both have to authenticate again, and only the customer can approve).
  */
-final class RefreshTokenRepository implements RefreshTokenRepositoryInterface
+final readonly class RefreshTokenRepository implements RefreshTokenRepositoryInterface
 {
-    public function __construct(private readonly TokenStore $store)
+    public function __construct(private TokenStore $store)
     {
     }
 
@@ -32,7 +32,7 @@ final class RefreshTokenRepository implements RefreshTokenRepositoryInterface
     {
         $accessToken = $refreshTokenEntity->getAccessToken();
         $connection = $this->store->findConnection($accessToken->getUserIdentifier());
-        if (null === $connection || !$connection->isActive()) {
+        if (!$connection instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface || !$connection->isActive()) {
             throw OAuthServerException::invalidGrant('The connection was revoked.');
         }
 
@@ -54,10 +54,10 @@ final class RefreshTokenRepository implements RefreshTokenRepositoryInterface
     public function isRefreshTokenRevoked(string $tokenId): bool
     {
         $token = $this->store->find(OAuthToken::TYPE_REFRESH, $tokenId);
-        if (null === $token) {
+        if (!$token instanceof \Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken) {
             return true;
         }
-        if (null !== $token->getRevokedAt()) {
+        if ($token->getRevokedAt() instanceof \DateTimeImmutable) {
             if ($this->store->isReplay($token)) {
                 $this->store->revokeAllForConnection($token->getConnection());
             }

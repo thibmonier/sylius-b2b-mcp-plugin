@@ -13,12 +13,12 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\ClientRegistrationException;
 use Tmonier\SyliusB2bMcpPlugin\RateLimit\RateLimiter;
 
 /** RFC 7591 dynamic client registration (used by Claude and ChatGPT when they add a connector). */
-final class RegistrationController
+final readonly class RegistrationController
 {
     public function __construct(
-        private readonly ClientRegistrar $registrar,
-        private readonly RateLimiter $rateLimiter,
-        private readonly bool $enabled,
+        private ClientRegistrar $registrar,
+        private RateLimiter $rateLimiter,
+        private bool $enabled,
     ) {
     }
 
@@ -28,7 +28,7 @@ final class RegistrationController
             throw new NotFoundHttpException();
         }
         $limited = $this->rateLimiter->consumeClientRegistration($request->getClientIp());
-        if (null !== $limited) {
+        if ($limited instanceof \Symfony\Component\HttpFoundation\Response) {
             return $limited;
         }
 

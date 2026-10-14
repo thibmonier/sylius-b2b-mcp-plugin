@@ -7,11 +7,11 @@ namespace Tmonier\SyliusB2bMcpPlugin\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /** Reads the connection that the bearer authenticator stored on the current request. */
-final class CurrentConnection
+final readonly class CurrentConnection
 {
     public const REQUEST_ATTRIBUTE = '_tmonier_b2b_mcp_connection';
 
-    public function __construct(private readonly RequestStack $requestStack)
+    public function __construct(private RequestStack $requestStack)
     {
     }
 

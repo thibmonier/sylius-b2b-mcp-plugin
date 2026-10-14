@@ -13,13 +13,13 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /** HttpFoundation <-> PSR-7 for league/oauth2-server. */
-final class PsrBridge
+final readonly class PsrBridge
 {
-    private readonly PsrHttpFactory $psrFactory;
+    private PsrHttpFactory $psrFactory;
 
-    private readonly HttpFoundationFactory $foundationFactory;
+    private HttpFoundationFactory $foundationFactory;
 
-    private readonly Psr17Factory $psr17Factory;
+    private Psr17Factory $psr17Factory;
 
     public function __construct()
     {

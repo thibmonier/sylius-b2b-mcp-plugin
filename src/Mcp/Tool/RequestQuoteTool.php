@@ -27,7 +27,7 @@ use Tmonier\SyliusQuoteRequestPlugin\Manager\QuoteRequestManagerInterface;
 use Tmonier\SyliusQuoteRequestPlugin\RateLimit\RateLimitKeys;
 
 /** Quote request (tmonier/sylius-quote-request-plugin) from the cart or from lines, like the shop form. */
-final class RequestQuoteTool implements B2bToolInterface
+final readonly class RequestQuoteTool implements B2bToolInterface
 {
     public const NAME = 'request_quote';
 
@@ -37,15 +37,15 @@ final class RequestQuoteTool implements B2bToolInterface
 
     /** @param RepositoryInterface<ProductVariantInterface> $variantRepository */
     public function __construct(
-        private readonly ToolRunner $runner,
-        private readonly QuoteRequestFactoryInterface $quoteRequestFactory,
-        private readonly QuoteRequestManagerInterface $quoteRequestManager,
-        private readonly CustomerCartProvider $cartProvider,
-        private readonly RepositoryInterface $variantRepository,
-        private readonly ShopUrlGenerator $urlGenerator,
-        private readonly bool $fromCart,
-        private readonly int $maxLines,
-        private readonly ?RateLimiterFactory $emailLimiter = null,
+        private ToolRunner $runner,
+        private QuoteRequestFactoryInterface $quoteRequestFactory,
+        private QuoteRequestManagerInterface $quoteRequestManager,
+        private CustomerCartProvider $cartProvider,
+        private RepositoryInterface $variantRepository,
+        private ShopUrlGenerator $urlGenerator,
+        private bool $fromCart,
+        private int $maxLines,
+        private ?RateLimiterFactory $emailLimiter = null,
     ) {
     }
 
@@ -107,14 +107,14 @@ final class RequestQuoteTool implements B2bToolInterface
             }
 
             $channel = $connection->channel;
-            $quoteRequest = $this->quoteRequestFactory->createForChannel($channel, (string) ($channel->getDefaultLocale()?->getCode() ?? 'en_US'), $customer);
+            $quoteRequest = $this->quoteRequestFactory->createForChannel($channel, $channel->getDefaultLocale()?->getCode() ?? 'en_US', $customer);
             $skipped = [];
             foreach ($quantities as $code => [$variant, $quantity]) {
                 $product = $variant?->getProduct();
                 $line = null === $variant || !$variant->isEnabled() || !$product instanceof ProductInterface || !$product->isEnabled() || !$product->hasChannel($channel)
                     ? null
                     : $this->quoteRequestFactory->createLine($quoteRequest, $variant, $quantity);
-                if (null === $line) {
+                if (!$line instanceof \Tmonier\SyliusQuoteRequestPlugin\Entity\QuoteRequestLineInterface) {
                     $skipped[] = ['sku' => (string) $code, 'quantity' => $quantity, 'reason' => 'not_quotable'];
 
                     continue;
@@ -126,7 +126,7 @@ final class RequestQuoteTool implements B2bToolInterface
                 throw new ToolRefusal('None of these products can be quoted on this shop.');
             }
 
-            if (null !== $this->emailLimiter && !$this->emailLimiter->create(RateLimitKeys::email((string) $quoteRequest->getEmail()))->consume()->isAccepted()) {
+            if ($this->emailLimiter instanceof \Symfony\Component\RateLimiter\RateLimiterFactory && !$this->emailLimiter->create(RateLimitKeys::email((string) $quoteRequest->getEmail()))->consume()->isAccepted()) {
                 throw new ToolRefusal('Too many quote requests: retry later.');
             }
 

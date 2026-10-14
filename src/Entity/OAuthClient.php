@@ -12,15 +12,15 @@ class OAuthClient
 {
     protected ?int $id = null;
 
-    private \DateTimeImmutable $createdAt;
+    private readonly \DateTimeImmutable $createdAt;
 
     /** @param list<string> $redirectUris */
     public function __construct(
-        private string $identifier,
-        private string $name,
-        private array $redirectUris,
-        private ?string $secretHash = null,
-        private bool $dynamicallyRegistered = true,
+        private readonly string $identifier,
+        private readonly string $name,
+        private readonly array $redirectUris,
+        private readonly ?string $secretHash = null,
+        private readonly bool $dynamicallyRegistered = true,
     ) {
         $this->createdAt = new \DateTimeImmutable();
     }

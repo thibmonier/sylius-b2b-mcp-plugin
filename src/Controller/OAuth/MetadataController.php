@@ -13,13 +13,13 @@ use Tmonier\SyliusB2bMcpPlugin\OAuth\McpEndpoint;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\ScopeCatalog;
 
 /** RFC 9728 protected resource metadata and RFC 8414 authorization server metadata. */
-final class MetadataController
+final readonly class MetadataController
 {
     public function __construct(
-        private readonly McpEndpoint $endpoint,
-        private readonly UrlGeneratorInterface $urlGenerator,
-        private readonly bool $dynamicClientRegistration,
-        private readonly ScopeCatalog $scopeCatalog,
+        private McpEndpoint $endpoint,
+        private UrlGeneratorInterface $urlGenerator,
+        private bool $dynamicClientRegistration,
+        private ScopeCatalog $scopeCatalog,
     ) {
     }
 

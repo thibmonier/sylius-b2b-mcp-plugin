@@ -7,13 +7,13 @@ namespace Tmonier\SyliusB2bMcpPlugin\OAuth;
 use Symfony\Component\HttpFoundation\Request;
 
 /** URLs of the protected MCP endpoint and of its metadata, for the host of the request (one issuer per shop host). */
-final class McpEndpoint
+final readonly class McpEndpoint
 {
     public const PROTECTED_RESOURCE_METADATA = '/.well-known/oauth-protected-resource';
 
     public const AUTHORIZATION_SERVER_METADATA = '/.well-known/oauth-authorization-server';
 
-    public function __construct(private readonly string $path)
+    public function __construct(private string $path)
     {
     }
 

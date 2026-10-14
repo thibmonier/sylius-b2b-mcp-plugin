@@ -14,15 +14,15 @@ use Tmonier\SyliusB2bMcpPlugin\Order\OrderFinder;
 use Tmonier\SyliusB2bMcpPlugin\Order\OrderPresenter;
 use Tmonier\SyliusB2bMcpPlugin\Security\AuthenticatedConnection;
 
-final class GetOrderTool implements B2bToolInterface
+final readonly class GetOrderTool implements B2bToolInterface
 {
     public const NAME = 'get_order';
 
     public function __construct(
-        private readonly ToolRunner $runner,
-        private readonly OrderFinder $orderFinder,
-        private readonly OrderPresenter $presenter,
-        private readonly OrderApprovalStatusInterface $approvalStatus,
+        private ToolRunner $runner,
+        private OrderFinder $orderFinder,
+        private OrderPresenter $presenter,
+        private OrderApprovalStatusInterface $approvalStatus,
     ) {
     }
 

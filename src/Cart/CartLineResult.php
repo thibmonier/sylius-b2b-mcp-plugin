@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tmonier\SyliusB2bMcpPlugin\Cart;
 
 /** Outcome of one line; statuses follow tmonier/sylius-quick-order-plugin. */
-final class CartLineResult
+final readonly class CartLineResult
 {
     public const VALID = 'valid';
 
@@ -32,13 +32,13 @@ final class CartLineResult
     public const INVALID_QUANTITY = 'invalid_quantity';
 
     public function __construct(
-        public readonly string $code,
-        public readonly int $requestedQuantity,
-        public readonly string $status,
-        public readonly int $addedQuantity = 0,
-        public readonly ?string $productName = null,
-        public readonly ?string $variantName = null,
-        public readonly ?int $available = null,
+        public string $code,
+        public int $requestedQuantity,
+        public string $status,
+        public int $addedQuantity = 0,
+        public ?string $productName = null,
+        public ?string $variantName = null,
+        public ?int $available = null,
     ) {
     }
 
