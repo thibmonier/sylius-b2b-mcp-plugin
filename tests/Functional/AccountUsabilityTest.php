@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Tmonier\SyliusB2bMcpPlugin\Functional;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Tests\Tmonier\SyliusB2bMcpPlugin\Account\SwitchableChecker;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Tests\Tmonier\SyliusB2bMcpPlugin\Account\SwitchableChecker;
 use Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface;
 use Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
