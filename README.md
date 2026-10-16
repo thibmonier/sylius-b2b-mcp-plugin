@@ -245,6 +245,8 @@ final class ApprovedRegistrationChecker implements AccountUsabilityCheckerInterf
   logged (channel `mcp`), the client only sees `access_denied`.
 - The reason (a short machine-readable string) is never sent to the client. An unknown, expired or revoked token
   is still a 401 and no checker is called.
+- The rate limit of the connection is applied before the checkers: a flood of refused calls is limited (429) and does not
+  fill the audit log.
 - The checkers run on every call: keep them cheap and independent of the request (the customer is the only
   input). The token endpoint is not checked: a refresh gives a token that the endpoint then refuses.
 
