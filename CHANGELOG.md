@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1 (2026-10-16)
+
+Same code as the intended 1.2.0 (account usability checkers for MCP consent and calls). The `v1.2.0` tag first
+pointed to the previous main and Packagist kept that reference: **use 1.2.1**, not 1.2.0.
+
 ## 1.2.0 (2026-10-16)
 
 ### Added
