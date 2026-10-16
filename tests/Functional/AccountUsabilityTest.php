@@ -6,6 +6,8 @@ namespace Tests\Tmonier\SyliusB2bMcpPlugin\Functional;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Tests\Tmonier\SyliusB2bMcpPlugin\Account\SwitchableChecker;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface;
 use Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\TokenStore;
 
@@ -97,6 +99,24 @@ final class AccountUsabilityTest extends WebTestCase
 
         self::assertResponseStatusCodeSame(403);
         self::assertSame(1, $this->sqlInt("SELECT COUNT(*) FROM tmonier_b2b_mcp_tool_call WHERE outcome = 'refused' AND message LIKE '%rejected%'"));
+    }
+
+    public function testARefusedAccountIsRateLimitedBeforeAnythingIsWrittenToTheAuditLog(): void
+    {
+        $connection = null;
+        $token = $this->accessToken($this->customer(), connection: $connection);
+        self::assertInstanceOf(ConnectionInterface::class, $connection);
+        $this->checker('first')->refusal = 'registration_pending';
+        $limiter = $this->client->getContainer()->get('limiter.tmonier_b2b_mcp_requests');
+        self::assertInstanceOf(RateLimiterFactory::class, $limiter);
+        $limiter->create('connection-' . $connection->getId())->consume(120);
+        $audited = $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_tool_call');
+
+        $this->post($token, ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list']);
+
+        self::assertResponseStatusCodeSame(429);
+        self::assertSame($audited, $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_tool_call'), 'a flood of refused calls cannot fill the audit log');
+        self::assertSame(0, $this->checker('first')->calls, 'the checkers are not asked either');
     }
 
     public function testTheConsentIsRefusedAndNoCodeIsIssued(): void
