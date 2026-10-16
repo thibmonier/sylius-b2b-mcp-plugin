@@ -16,6 +16,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Authenticator\Token\PostAuthenticationToken;
+use Tmonier\SyliusB2bMcpPlugin\Account\AccountUsabilityChain;
+use Tmonier\SyliusB2bMcpPlugin\Audit\ToolCallLogger;
+use Tmonier\SyliusB2bMcpPlugin\Entity\ToolCallInterface;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\ApproveScopeGuard;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\McpEndpoint;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\ScopeCatalog;
@@ -37,6 +40,9 @@ final readonly class McpAuthenticationListener
 {
     public const FIREWALL_NAME = 'tmonier_b2b_mcp';
 
+    /** Name of the refusal in the audit log (it is not a tool). */
+    private const REFUSAL_TOOL = 'account_usability';
+
     private const LAST_USED_RESOLUTION = 'PT5M';
 
     public function __construct(
@@ -47,7 +53,9 @@ final readonly class McpAuthenticationListener
         private RateLimiter $rateLimiter,
         private TokenStorageInterface $tokenStorage,
         private ScopeCatalog $scopeCatalog,
-        private ?ApproveScopeGuard $approveScopeGuard = null,
+        private ?ApproveScopeGuard $approveScopeGuard,
+        private AccountUsabilityChain $accountUsability,
+        private ToolCallLogger $toolCallLogger,
     ) {
     }
 
@@ -74,9 +82,18 @@ final readonly class McpAuthenticationListener
             return;
         }
 
+        // Rate limit first: a refused account must not be able to write the audit log without bound.
         $limited = $this->rateLimiter->consumeMcpRequest('connection-' . $connection->connection->getId());
         if ($limited instanceof \Symfony\Component\HttpFoundation\Response) {
             $event->setResponse($limited);
+
+            return;
+        }
+
+        $usability = $this->accountUsability->check($connection->customer);
+        if (!$usability->isUsable()) {
+            $this->toolCallLogger->log($connection, self::REFUSAL_TOOL, [], ToolCallInterface::OUTCOME_REFUSED, 'account not usable: ' . $usability->reason(), 0, $request->getClientIp());
+            $event->setResponse($this->accountRefused());
 
             return;
         }
@@ -137,6 +154,16 @@ final readonly class McpAuthenticationListener
             $connection->connection->setLastUsedAt($now);
             $this->entityManager->flush();
         }
+    }
+
+    /** The reason stays in the logs and the audit log; nothing public may cache a refusal. */
+    private function accountRefused(): JsonResponse
+    {
+        return new JsonResponse(
+            ['error' => 'access_denied', 'error_description' => 'This account cannot use the MCP server.'],
+            Response::HTTP_FORBIDDEN,
+            ['Cache-Control' => 'private, no-store'],
+        );
     }
 
     private function unauthorized(Request $request, ?string $error): \Symfony\Component\HttpFoundation\JsonResponse
