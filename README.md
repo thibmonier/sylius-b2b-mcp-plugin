@@ -220,6 +220,34 @@ page names the assistant after that verified host (Claude, ChatGPT), shows the h
 prominently and flags self-registered clients ("registered itself on <date> under the name
 ... not verified by the shop").
 
+## Restricting the accounts that may connect an assistant (extension point)
+
+By default any enabled shop account may connect an assistant and call the endpoint. To add a rule of your
+application (registration not approved, account suspended, contract ended...), implement
+`Tmonier\SyliusB2bMcpPlugin\Account\AccountUsabilityCheckerInterface`; it is tagged
+`tmonier_b2b_mcp.account_usability_checker` by autoconfiguration (a tag priority orders several checkers):
+
+```php
+final class ApprovedRegistrationChecker implements AccountUsabilityCheckerInterface
+{
+    public function check(CustomerInterface $customer): AccountUsability
+    {
+        return $this->isApproved($customer) ? AccountUsability::usable() : AccountUsability::refused('registration_pending');
+    }
+}
+```
+
+- The checkers are asked at the OAuth consent (page and decision: a refused account gets a 403, no connection and
+  no authorization code) and at **every call of `/_mcp`**, after the token is resolved: an access token issued
+  before the refusal gets a 403 `access_denied` with `Cache-Control: private, no-store`, and the refusal is
+  written to the audit log (tool `account_usability`, outcome `refused`, with your reason).
+- The first refusal wins; later checkers are not asked. A checker that throws refuses (fail closed): the error is
+  logged (channel `mcp`), the client only sees `access_denied`.
+- The reason (a short machine-readable string) is never sent to the client. An unknown, expired or revoked token
+  is still a 401 and no checker is called.
+- The checkers run on every call: keep them cheap and independent of the request (the customer is the only
+  input). The token endpoint is not checked: a refresh gives a token that the endpoint then refuses.
+
 ## Configuration
 
 Optional, with the defaults:

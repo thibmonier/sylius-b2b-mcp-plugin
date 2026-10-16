@@ -39,6 +39,10 @@ server: `symfony server:start -d --port=8099 --no-tls`, MCP endpoint
 - `Controller/OAuth/`: metadata, register, authorize (redirects to the consent page), token,
   revoke. `Controller/Shop/`: consent page and "AI assistants" account page.
   `Controller/Admin/`: revoke a connection. Routes in `config/routes/*.yaml`.
+- `Account/`: `AccountUsabilityCheckerInterface` (tag `tmonier_b2b_mcp.account_usability_checker`), `AccountUsability`,
+  `AccountUsabilityChain` (first refusal wins, exception = refusal). Asked by `ConsentController` (403) and by
+  `McpAuthenticationListener::authenticate()` after the token is resolved (403 `access_denied` + audit entry).
+  Test doubles: `tests/TestApplication/src/Account/SwitchableChecker`.
 - `Security/McpAuthenticationListener`: `kernel.request` priority 9 (bearer token, 401 with
   `resource_metadata`, rate limit) and 7 (shop user as security token, no session).
   `CurrentConnection` reads the `AuthenticatedConnection` from the request.

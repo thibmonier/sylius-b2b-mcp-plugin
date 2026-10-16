@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased (1.2.0)
+
+### Added
+
+- **Account usability extension point**: `AccountUsabilityCheckerInterface` (tag
+  `tmonier_b2b_mcp.account_usability_checker`, autoconfigured), `AccountUsability` and `AccountUsabilityChain`. A
+  refused account cannot open the OAuth consent (403, no code, no connection) and gets a 403 `access_denied`
+  (`Cache-Control: private, no-store`, audit log entry) on `/_mcp`, tokens issued before the refusal included. First
+  refusal wins, a checker that throws refuses (fail closed, error logged, nothing leaked). No checker, no change.
+
 ## 1.1.0 (2026-10-12)
 
 ### Added
