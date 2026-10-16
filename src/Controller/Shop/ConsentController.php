@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Tmonier\SyliusB2bMcpPlugin\Account\AccountUsabilityChain;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\AuthorizationRequestValidator;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\ConnectionManager;
 use Tmonier\SyliusB2bMcpPlugin\OAuth\Entity\ClientEntity;
@@ -46,6 +47,7 @@ final readonly class ConsentController
         private CsrfTokenManagerInterface $csrfTokenManager,
         private Environment $twig,
         private ScopeCatalog $scopeCatalog,
+        private AccountUsabilityChain $accountUsability,
     ) {
     }
 
@@ -55,6 +57,12 @@ final readonly class ConsentController
         $customer = $user instanceof ShopUserInterface ? $user->getCustomer() : null;
         if (!$customer instanceof CustomerInterface) {
             throw new AccessDeniedHttpException();
+        }
+
+        // An account the application does not (or no longer) accept cannot hand its access to an assistant: no
+        // consent page, no authorization code. The reason stays in the logs.
+        if (!$this->accountUsability->check($customer)->isUsable()) {
+            throw new AccessDeniedHttpException('This account cannot connect an AI assistant.');
         }
 
         try {

@@ -10,12 +10,15 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Tmonier\SyliusB2bMcpPlugin\Account\AccountUsabilityCheckerInterface;
 
 final class TmonierSyliusB2bMcpExtension extends AbstractResourceExtension implements PrependExtensionInterface
 {
     use PrependDoctrineMigrationsTrait;
 
     public const DEFAULT_ENDPOINT_PATH = '/_mcp';
+
+    public const TAG_ACCOUNT_USABILITY_CHECKER = 'tmonier_b2b_mcp.account_usability_checker';
 
     /** Optional tools: bundle class => services file. */
     public const OPTIONAL_TOOLS = [
@@ -53,6 +56,8 @@ final class TmonierSyliusB2bMcpExtension extends AbstractResourceExtension imple
         $bundles = $container->getParameter('kernel.bundles');
         $decisions = $config['approvals']['allow_decisions'] && \in_array(self::PURCHASE_APPROVAL_BUNDLE, $bundles, true);
         $container->setParameter('tmonier_b2b_mcp.approvals.decisions_enabled', $decisions);
+
+        $container->registerForAutoconfiguration(AccountUsabilityCheckerInterface::class)->addTag(self::TAG_ACCOUNT_USABILITY_CHECKER);
 
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/../../config'));
         $loader->load('services.php');

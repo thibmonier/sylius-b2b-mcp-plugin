@@ -6,6 +6,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use League\OAuth2\Server\AuthorizationServer;
 use Tmonier\SyliusB2bMcpPlugin\Audit\NullAuditMirror;
+use Tmonier\SyliusB2bMcpPlugin\Account\AccountUsabilityChain;
 use Tmonier\SyliusB2bMcpPlugin\Audit\ToolCallLogger;
 use Tmonier\SyliusB2bMcpPlugin\Cart\CartLinesAdderInterface;
 use Tmonier\SyliusB2bMcpPlugin\Cart\CartLockChecker;
@@ -134,6 +135,11 @@ return static function (ContainerConfigurator $container): void {
             service('limiter.tmonier_b2b_mcp_registration'),
         ]);
 
+    $services->set('tmonier_b2b_mcp.account.usability_chain', AccountUsabilityChain::class)
+        ->args([tagged_iterator('tmonier_b2b_mcp.account_usability_checker'), service('logger')->nullOnInvalid()])
+        ->tag('monolog.logger', ['channel' => 'mcp']);
+    $services->alias(AccountUsabilityChain::class, 'tmonier_b2b_mcp.account.usability_chain');
+
     // Before (9) and after (7) the firewall listener (8).
     $services->set('tmonier_b2b_mcp.security.authentication_listener', McpAuthenticationListener::class)
         ->args([
@@ -145,6 +151,8 @@ return static function (ContainerConfigurator $container): void {
             service('security.token_storage'),
             service('tmonier_b2b_mcp.oauth.scope_catalog'),
             service('tmonier_b2b_mcp.oauth.approve_scope_guard'),
+            service('tmonier_b2b_mcp.account.usability_chain'),
+            service('tmonier_b2b_mcp.audit.tool_call_logger'),
         ])
         ->tag('kernel.event_listener', ['event' => 'kernel.request', 'method' => 'authenticate', 'priority' => 9])
         ->tag('kernel.event_listener', ['event' => 'kernel.request', 'method' => 'setSecurityToken', 'priority' => 7]);
@@ -192,6 +200,7 @@ return static function (ContainerConfigurator $container): void {
             service('security.csrf.token_manager'),
             service('twig'),
             service('tmonier_b2b_mcp.oauth.scope_catalog'),
+            service('tmonier_b2b_mcp.account.usability_chain'),
         ]);
 
     $controllers->set('tmonier_b2b_mcp.controller.shop.connection', ConnectionController::class)
