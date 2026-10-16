@@ -53,9 +53,9 @@ final readonly class McpAuthenticationListener
         private RateLimiter $rateLimiter,
         private TokenStorageInterface $tokenStorage,
         private ScopeCatalog $scopeCatalog,
-        private ?ApproveScopeGuard $approveScopeGuard = null,
-        private ?AccountUsabilityChain $accountUsability = null,
-        private ?ToolCallLogger $toolCallLogger = null,
+        private ?ApproveScopeGuard $approveScopeGuard,
+        private AccountUsabilityChain $accountUsability,
+        private ToolCallLogger $toolCallLogger,
     ) {
     }
 
@@ -82,17 +82,18 @@ final readonly class McpAuthenticationListener
             return;
         }
 
-        $usability = $this->accountUsability?->check($connection->customer);
-        if ($usability instanceof \Tmonier\SyliusB2bMcpPlugin\Account\AccountUsability && !$usability->isUsable()) {
-            $this->toolCallLogger?->log($connection, self::REFUSAL_TOOL, [], ToolCallInterface::OUTCOME_REFUSED, 'account not usable: ' . $usability->reason(), 0, $request->getClientIp());
-            $event->setResponse($this->accountRefused());
+        // Rate limit first: a refused account must not be able to write the audit log without bound.
+        $limited = $this->rateLimiter->consumeMcpRequest('connection-' . $connection->connection->getId());
+        if ($limited instanceof \Symfony\Component\HttpFoundation\Response) {
+            $event->setResponse($limited);
 
             return;
         }
 
-        $limited = $this->rateLimiter->consumeMcpRequest('connection-' . $connection->connection->getId());
-        if ($limited instanceof \Symfony\Component\HttpFoundation\Response) {
-            $event->setResponse($limited);
+        $usability = $this->accountUsability->check($connection->customer);
+        if (!$usability->isUsable()) {
+            $this->toolCallLogger->log($connection, self::REFUSAL_TOOL, [], ToolCallInterface::OUTCOME_REFUSED, 'account not usable: ' . $usability->reason(), 0, $request->getClientIp());
+            $event->setResponse($this->accountRefused());
 
             return;
         }
