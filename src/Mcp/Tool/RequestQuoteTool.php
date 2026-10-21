@@ -10,7 +10,7 @@ use Sylius\Component\Core\Model\OrderItemInterface;
 use Sylius\Component\Core\Model\ProductInterface;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Resource\Doctrine\Persistence\RepositoryInterface;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Tmonier\SyliusB2bMcpPlugin\Cart\CustomerCartProvider;
 use Tmonier\SyliusB2bMcpPlugin\Mcp\B2bToolInterface;
 use Tmonier\SyliusB2bMcpPlugin\Mcp\ToolRefusal;
@@ -45,7 +45,7 @@ final readonly class RequestQuoteTool implements B2bToolInterface
         private ShopUrlGenerator $urlGenerator,
         private bool $fromCart,
         private int $maxLines,
-        private ?RateLimiterFactory $emailLimiter = null,
+        private ?RateLimiterFactoryInterface $emailLimiter = null,
     ) {
     }
 
@@ -126,7 +126,7 @@ final readonly class RequestQuoteTool implements B2bToolInterface
                 throw new ToolRefusal('None of these products can be quoted on this shop.');
             }
 
-            if ($this->emailLimiter instanceof \Symfony\Component\RateLimiter\RateLimiterFactory && !$this->emailLimiter->create(RateLimitKeys::email((string) $quoteRequest->getEmail()))->consume()->isAccepted()) {
+            if ($this->emailLimiter instanceof RateLimiterFactoryInterface && !$this->emailLimiter->create(RateLimitKeys::email((string) $quoteRequest->getEmail()))->consume()->isAccepted()) {
                 throw new ToolRefusal('Too many quote requests: retry later.');
             }
 

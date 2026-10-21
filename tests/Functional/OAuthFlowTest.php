@@ -561,7 +561,7 @@ final class OAuthFlowTest extends WebTestCase
         $token = $this->accessToken($customer, connection: $connection);
         self::assertInstanceOf(ConnectionInterface::class, $connection);
         $limiter = $this->client->getContainer()->get('limiter.tmonier_b2b_mcp_requests');
-        self::assertInstanceOf(\Symfony\Component\RateLimiter\RateLimiterFactory::class, $limiter);
+        self::assertInstanceOf(\Symfony\Component\RateLimiter\RateLimiterFactoryInterface::class, $limiter);
         $limiter->create('connection-' . $connection->getId())->consume(120);
 
         $this->post($token, ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list']);
@@ -573,7 +573,7 @@ final class OAuthFlowTest extends WebTestCase
     public function testRegistrationIsRateLimitedPerAddress(): void
     {
         $limiter = $this->client->getContainer()->get('limiter.tmonier_b2b_mcp_registration');
-        self::assertInstanceOf(\Symfony\Component\RateLimiter\RateLimiterFactory::class, $limiter);
+        self::assertInstanceOf(\Symfony\Component\RateLimiter\RateLimiterFactoryInterface::class, $limiter);
         $limiter->create('127.0.0.1')->consume(60);
 
         $this->register(['redirect_uris' => [self::REDIRECT_URI]]);

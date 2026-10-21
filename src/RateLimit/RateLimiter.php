@@ -6,15 +6,15 @@ namespace Tmonier\SyliusB2bMcpPlugin\RateLimit;
 
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 
 /** The limiters of the plugin (framework.rate_limiter, prepended by the extension). */
 final readonly class RateLimiter
 {
     public function __construct(
-        private RateLimiterFactory $mcpRequests,
-        private RateLimiterFactory $oauthRequests,
-        private RateLimiterFactory $clientRegistrations,
+        private RateLimiterFactoryInterface $mcpRequests,
+        private RateLimiterFactoryInterface $oauthRequests,
+        private RateLimiterFactoryInterface $clientRegistrations,
     ) {
     }
 
@@ -57,7 +57,7 @@ final readonly class RateLimiter
         return inet_ntop(substr($packed, 0, 7) . str_repeat("\0", 9)) . '/56';
     }
 
-    private function consume(RateLimiterFactory $factory, string $key): ?Response
+    private function consume(RateLimiterFactoryInterface $factory, string $key): ?Response
     {
         $limit = $factory->create($key)->consume();
         if ($limit->isAccepted()) {
