@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.2 (2026-10-21)
+
+- Fix: the rate limiters are typed `RateLimiterFactoryInterface` instead of the concrete `RateLimiterFactory`, which Symfony 8
+  no longer autowires (compatible with Symfony 7.4 and 8.x).
+
 ## 1.2.1 (2026-10-16)
 
 Same code as the intended 1.2.0 (account usability checkers for MCP consent and calls). The `v1.2.0` tag first

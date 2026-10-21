@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Tmonier\SyliusB2bMcpPlugin\Functional;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Symfony\Component\RateLimiter\RateLimiterFactoryInterface;
 use Tests\Tmonier\SyliusB2bMcpPlugin\Account\SwitchableChecker;
 use Tmonier\SyliusB2bMcpPlugin\Entity\ConnectionInterface;
 use Tmonier\SyliusB2bMcpPlugin\Entity\OAuthToken;
@@ -108,7 +108,7 @@ final class AccountUsabilityTest extends WebTestCase
         self::assertInstanceOf(ConnectionInterface::class, $connection);
         $this->checker('first')->refusal = 'registration_pending';
         $limiter = $this->client->getContainer()->get('limiter.tmonier_b2b_mcp_requests');
-        self::assertInstanceOf(RateLimiterFactory::class, $limiter);
+        self::assertInstanceOf(RateLimiterFactoryInterface::class, $limiter);
         $limiter->create('connection-' . $connection->getId())->consume(120);
         $audited = $this->sqlInt('SELECT COUNT(*) FROM tmonier_b2b_mcp_tool_call');
 
