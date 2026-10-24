@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.3 (2026-10-25)
 
 - Fix: `symfony/lock` is now in `require` (the rate limiters need it; a Sylius-Standard project does not contain it).
 - Fix: the README no longer asks to import the configuration and the routes of `sylius/mcp-server-plugin` next to its
