@@ -22,6 +22,7 @@
         "sylius/mcp-server-plugin": "^0.2",
         "sylius/sylius": "^2.2.9 || ^2.3",
         "symfony/clock": "^7.4 || ^8.0",
+        "symfony/lock": "^7.4 || ^8.0",
         "symfony/psr-http-message-bridge": "^7.4 || ^8.0",
         "symfony/rate-limiter": "^7.4 || ^8.0"
     },

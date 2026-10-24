@@ -39,7 +39,7 @@ final class InstallationDocumentationTest extends TestCase
         $blocks = self::yamlBlocksImporting(self::MCP_SERVER_ROUTES, $this->read($readme));
 
         self::assertCount(1, $blocks);
-        self::assertStringContainsString('Flex', $blocks[0]['introduction']);
+        self::assertMatchesRegularExpression('/^\s*# .*(without|sans) Flex/m', $blocks[0]['yaml']);
     }
 
     public function testADuplicatedImportIsDetected(): void
