@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Fix: `symfony/lock` is now in `require` (the rate limiters need it; a Sylius-Standard project does not contain it).
+- Fix: the README no longer asks to import the configuration and the routes of `sylius/mcp-server-plugin` next to its
+  Flex recipe, which already imports them ("Do not add the mcp loader twice"); the imports are listed for a project
+  without Flex only.
+
 ## 1.2.2 (2026-10-21)
 
 - Fix: the rate limiters are typed `RateLimiterFactoryInterface` instead of the concrete `RateLimiterFactory`, which Symfony 8

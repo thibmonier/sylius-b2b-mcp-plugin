@@ -126,22 +126,35 @@ the OAuth metadata use `https` and the public host.
     Tmonier\SyliusB2bMcpPlugin\TmonierSyliusB2bMcpPlugin::class => ['all' => true],
     ```
 
-3. Import the configuration and the routes of both plugins:
+3. Import the configuration and the routes of the plugin:
 
     ```yaml
     # config/packages/tmonier_sylius_b2b_mcp.yaml
     imports:
-        - { resource: "@SyliusMcpServerPlugin/config/config.yaml" }
         - { resource: "@TmonierSyliusB2bMcpPlugin/config/config.yaml" }
     ```
 
     ```yaml
     # config/routes/tmonier_sylius_b2b_mcp.yaml
-    sylius_mcp_server:
-        resource: "@SyliusMcpServerPlugin/config/routes.yaml"
-
     tmonier_sylius_b2b_mcp:
         resource: "@TmonierSyliusB2bMcpPlugin/config/routes.yaml"
+    ```
+
+    With Symfony Flex (Sylius-Standard has it), the recipe of `sylius/mcp-server-plugin` has already
+    imported its own configuration and routes: **do not import them again**, the router would fail
+    ("Do not add the mcp loader twice"). Without Flex recipes, add the imports of the MCP server
+    plugin yourself, once:
+
+    ```yaml
+    # config/packages/sylius_mcp_server.yaml (without Flex only)
+    imports:
+        - { resource: "@SyliusMcpServerPlugin/config/config.yaml" }
+    ```
+
+    ```yaml
+    # config/routes/sylius_mcp_server.yaml (without Flex only)
+    sylius_mcp_server:
+        resource: "@SyliusMcpServerPlugin/config/routes.yaml"
     ```
 
     No change to `security.yaml` is needed (see How it works).
